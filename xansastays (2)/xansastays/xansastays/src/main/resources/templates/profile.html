@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Profile – Xansa Stay</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <link rel="stylesheet" href="/css/home.css">
+  <link rel="stylesheet" href="/css/profile.css">
+  <!-- SweetAlert2 -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <!-- ======= Added: subtle hover interactions across the page ======= -->
+  <style>
+    /* Sidebar quick links */
+    .quick-link {
+      transition: background 0.2s ease, transform 0.2s ease, padding-left 0.2s ease;
+      cursor: pointer;
+    }
+    .quick-link:hover {
+      background: rgba(0,0,0,0.04);
+      transform: translateX(4px);
+    }
+    .quick-link.danger-link:hover {
+      background: rgba(220, 53, 69, 0.08);
+    }
+
+    /* Sidebar cards */
+    .sidebar-card {
+      transition: box-shadow 0.25s ease, transform 0.25s ease;
+    }
+    .avatar-card:hover {
+      box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+    }
+
+    /* Avatar image + edit button */
+    .avatar-img {
+      transition: transform 0.3s ease;
+    }
+    .avatar-wrap:hover .avatar-img {
+      transform: scale(1.04);
+    }
+    .avatar-edit-btn {
+      transition: transform 0.2s ease, background 0.2s ease;
+      cursor: pointer;
+    }
+    .avatar-edit-btn:hover {
+      transform: scale(1.15);
+    }
+
+    /* Form inputs */
+    .form-input {
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+    .form-input:not(:disabled):hover {
+      border-color: var(--clr-brand, #3d5240);
+    }
+
+    /* Buttons */
+    .btn-primary,
+    .form-save-btn,
+    .btn-book {
+      transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+    }
+    .btn-primary:hover,
+    .form-save-btn:hover,
+    .btn-book:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(0,0,0,0.15);
+    }
+
+    /* Room cards (favourites grid) */
+    .room-card {
+      transition: box-shadow 0.25s ease, transform 0.25s ease;
+    }
+    .room-card:hover {
+      box-shadow: 0 10px 28px rgba(0,0,0,0.12);
+      transform: translateY(-4px);
+    }
+    .room-img img {
+      transition: transform 0.4s ease;
+    }
+    .room-card:hover .room-img img {
+      transform: scale(1.06);
+    }
+
+    /* Favourite heart button */
+    .fav-heart {
+      transition: transform 0.2s ease;
+      cursor: pointer;
+    }
+    .fav-heart:hover {
+      transform: scale(1.2);
+    }
+
+    /* Footer socials */
+    .social-btn {
+      transition: background 0.2s ease, transform 0.2s ease;
+      cursor: pointer;
+    }
+    .social-btn:hover {
+      background: var(--clr-gold, #c9a35a);
+      transform: translateY(-3px);
+    }
+
+    /* Footer links */
+    footer a {
+      transition: color 0.2s ease, padding-left 0.2s ease;
+    }
+    footer a:hover {
+      color: var(--clr-gold, #c9a35a);
+      padding-left: 3px;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ======= NAVBAR (identical to home.html) ======= -->
+<nav th:replace="~{navbar :: navbar}"></nav>
+
+<!-- ======= PAGE HERO STRIP ======= -->
+<div class="profile-hero-strip">
+  <div class="profile-hero-inner">
+    <div class="section-eyebrow">My Account</div>
+    <h1 class="profile-hero-title">Your Profile</h1>
+  </div>
+</div>
+
+<!-- ======= FLASH DATA (hidden — read by JS below) ======= -->
+<!--
+  We no longer show plain HTML banners.
+  Instead, Thymeleaf writes the flag values into JS variables,
+  and SweetAlert2 picks them up on DOM-ready.
+-->
+<div th:if="${profileUpdated}" id="flashProfileUpdated" style="display:none;"></div>
+<div th:if="${profileError}"   id="flashProfileError"   th:data-msg="${profileError}" style="display:none;"></div>
+
+<!-- ======= MAIN GRID ======= -->
+<div class="profile-page-wrap">
+  <div class="profile-grid">
+
+    <!-- ===== LEFT SIDEBAR ===== -->
+    <aside class="profile-sidebar">
+
+      <!-- Avatar card -->
+      <div class="sidebar-card avatar-card">
+        <div class="avatar-wrap">
+          <img
+                  th:src="${guest != null and guest.profilePic != null and guest.profilePic != ''} ? ${guest.profilePic} : '/images/profile_avatar.jpg'"
+                  alt="Profile Photo"
+                  class="avatar-img"
+                  id="avatarPreview">
+          <label class="avatar-edit-btn" for="profilePicInput" title="Change photo">✏️</label>
+        </div>
+        <div class="avatar-name" th:text="${guest.name}">Guest Name</div>
+        <div class="avatar-email" th:text="${guest.email}">guest@email.com</div>
+        <div class="avatar-badge">
+          <span th:text="${guest.role != null ? guest.role.name() : 'GUEST'}">GUEST</span>
+        </div>
+      </div>
+
+      <!-- Quick links -->
+      <div class="sidebar-card quick-links-card">
+        <div class="quick-link active" onclick="showTab('edit', this)">✏️ Edit Profile</div>
+        <div class="quick-link" onclick="showTab('favorites', this)">❤️ Favourites</div>
+        <div class="quick-link danger-link" onclick="confirmLogout()">🚪 Logout</div>
+        <div class="quick-link danger-link" onclick="confirmDeleteAccount()">🗑️ Delete Account</div>
+      </div>
+
+    </aside>
+
+    <!-- ===== RIGHT CONTENT ===== -->
+    <main class="profile-main">
+
+      <!-- ── TAB: EDIT PROFILE ── -->
+      <section class="tab-section active" id="tab-edit">
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">Edit Profile</h2>
+            <p class="card-subtitle">Update your personal information below.</p>
+          </div>
+
+          <form th:action="@{/profile/update}" method="post" enctype="multipart/form-data" id="profileForm"
+                novalidate onsubmit="return validateForm()">
+
+            <!-- Hidden file input driven by avatar label -->
+            <input type="file" id="profilePicInput" name="profilePicFile"
+                   accept="image/png,image/jpeg,image/webp"
+                   style="display:none"
+                   onchange="previewAvatar(this)">
+
+            <div class="form-grid">
+
+              <!-- Full Name (editable) -->
+              <div class="form-group full-width">
+                <label class="form-label" for="name">Full Name <span class="req">*</span></label>
+                <input class="form-input" type="text" id="name" name="name"
+                       th:value="${guest.name}"
+                       placeholder="Enter your full name"
+                       required maxlength="100">
+                <div class="form-error" id="nameError"></div>
+              </div>
+
+              <!-- Email (read-only) -->
+              <div class="form-group">
+                <label class="form-label" for="email">Email Address</label>
+                <input class="form-input readonly-input" type="email" id="email"
+                       th:value="${guest.email}"
+                       disabled>
+                <div class="form-hint">Email cannot be changed.</div>
+              </div>
+
+              <!-- Phone (editable) -->
+              <div class="form-group">
+                <label class="form-label" for="contact">Phone Number <span class="req">*</span></label>
+                <input class="form-input" type="tel" id="contact" name="contact"
+                       th:value="${guest.contact}"
+                       placeholder="10-digit number"
+                       maxlength="10"
+                       required>
+                <div class="form-error" id="contactError"></div>
+              </div>
+
+              <!-- Address -->
+              <div class="form-group full-width">
+                <label class="form-label" for="address">Address</label>
+                <textarea class="form-input form-textarea" id="address" name="address"
+                          placeholder="Street / area / locality"
+                          maxlength="300"
+                          th:text="${guest.address}"></textarea>
+              </div>
+
+              <!-- City -->
+              <div class="form-group">
+                <label class="form-label" for="city">City</label>
+                <input class="form-input" type="text" id="city" name="city"
+                       th:value="${guest.city}"
+                       placeholder="Your city"
+                       maxlength="80">
+              </div>
+
+              <!-- State -->
+              <div class="form-group">
+                <label class="form-label" for="state">State</label>
+                <input class="form-input" type="text" id="state" name="state"
+                       th:value="${guest.state}"
+                       placeholder="Your state"
+                       maxlength="80">
+              </div>
+
+              <!-- Country -->
+              <div class="form-group">
+                <label class="form-label" for="country">Country</label>
+                <input class="form-input" type="text" id="country" name="country"
+                       th:value="${guest.country}"
+                       placeholder="Your country"
+                       maxlength="80">
+              </div>
+
+              <!-- ── Read-only account info ── -->
+
+              <!-- Account Status -->
+              <div class="form-group">
+                <label class="form-label">Account Status</label>
+                <input class="form-input readonly-input" type="text"
+                       th:value="${guest.status} ? 'Active' : 'Deactivated'"
+                       disabled>
+              </div>
+
+              <!-- Member Since -->
+              <div class="form-group full-width">
+                <label class="form-label">Member Since</label>
+                <input class="form-input readonly-input" type="text"
+                       th:value="${#dates.format(guest.doj, 'dd MMM yyyy')}"
+                       disabled>
+              </div>
+
+            </div><!-- /form-grid -->
+
+            <div class="form-actions">
+              <button type="submit" class="btn-primary form-save-btn">Save Changes</button>
+            </div>
+
+          </form>
+        </div>
+      </section>
+
+      <!-- ── TAB: FAVOURITES ── -->
+      <section class="tab-section" id="tab-favorites">
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">Favourite Rooms</h2>
+            <p class="card-subtitle">Rooms you've saved for later.</p>
+          </div>
+
+          <!-- Real favourites, loaded from ${favoriteRooms} by ProfileController -->
+          <div class="rooms-grid fav-rooms-grid" th:if="${favoriteRooms != null and !favoriteRooms.empty}">
+
+            <div class="room-card" th:each="room : ${favoriteRooms}">
+              <div class="room-img r1">
+                <img th:if="${room.images != null and !room.images.empty}"
+                     th:src="@{/admin/rooms/image/{id}(id=${room.images[0].imageId})}"
+                     th:alt="${room.name}">
+                <img th:unless="${room.images != null and !room.images.empty}"
+                     src="/images/room-deluxe.jpg" alt="Room">
+                <span class="room-tag"
+                      th:text="${room.status != null and room.status.name() == 'AVAILABLE'} ? 'Available' : 'Booked'">
+                </span>
+                <button class="fav-heart active" title="Remove from favourites"
+                        th:attr="data-roomid=${room.roomId}" onclick="removeFav(this)">❤️</button>
+              </div>
+              <div class="room-body">
+                <div class="room-name" th:text="${room.name}">Room Name</div>
+                <div class="room-features">
+                  <span class="feat" th:if="${room.areaSqm != null}" th:text="${room.areaSqm} + ' m²'"></span>
+                  <span class="feat" th:if="${room.maxGuests != null}" th:text="${room.maxGuests} + ' Guests'"></span>
+                  <span class="feat" th:if="${room.viewType != null and room.viewType != ''}" th:text="${room.viewType}"></span>
+                  <span class="feat" th:if="${room.bedType != null and room.bedType != ''}" th:text="${room.bedType}"></span>
+                </div>
+                <div class="room-footer">
+                  <div>
+                    <div class="room-price">
+                      ₹<span th:text="${#numbers.formatInteger(room.pricePerDay, 1, 'COMMA')}">0</span>
+                      <span>/ night</span>
+                    </div>
+                    <div class="price-note">Taxes included</div>
+                  </div>
+                  <a class="btn-book" th:href="@{'/room/' + ${room.roomId}}"
+                     style="text-decoration:none; text-align:center;">View Details</a>
+                </div>
+              </div>
+            </div>
+
+          </div><!-- /rooms-grid -->
+
+          <!-- Empty state — shown server-side when there are no favourites, and client-side when the last one is removed -->
+          <div class="fav-empty" id="favEmpty"
+               th:style="${favoriteRooms == null or favoriteRooms.empty} ? 'display:flex;' : 'display:none;'">
+            <div class="fav-empty-icon">🏨</div>
+            <h3>No favourites yet</h3>
+            <p>Browse our rooms and tap ❤️ to save them here.</p>
+            <a href="/rooms" class="btn-primary" style="display:inline-block;margin-top:1rem;padding:12px 28px;text-decoration:none;">Explore Rooms</a>
+          </div>
+
+        </div>
+      </section>
+
+
+
+    </main>
+  </div><!-- /profile-grid -->
+</div><!-- /profile-page-wrap -->
+
+
+<!-- ======= HIDDEN SOFT-DELETE FORM ======= -->
+<!--
+  This form is submitted programmatically by JS after the SweetAlert2
+  confirmation is accepted. It POSTs to the soft-delete endpoint.
+-->
+<form id="deleteAccountForm" th:action="@{/profile/delete-account}" method="post" style="display:none;"></form>
+
+
+<!-- ======= FOOTER (identical to home.html) ======= -->
+<footer>
+  <div class="footer-top">
+    <div class="footer-brand">
+      <div class="footer-logo">
+        <img src="/images/xansastaylogo2.png" alt="Xansa Stay Logo">
+      </div>
+      <p>Experience luxury, comfort, and world-class hospitality. Your dream stay begins here at Xansa.</p>
+      <div class="footer-socials">
+        <div class="social-btn">f</div>
+        <div class="social-btn">in</div>
+        <div class="social-btn">tw</div>
+        <div class="social-btn">yt</div>
+      </div>
+    </div>
+    <div class="footer-col">
+      <h4>Hotel</h4>
+      <a href="#">About Xansa</a>
+      <a href="#">Our Story</a>
+      <a href="#">Awards</a>
+      <a href="#">Careers</a>
+    </div>
+    <div class="footer-col">
+      <h4>Services</h4>
+      <a href="#">Rooms &amp; Suites</a>
+      <a href="#">Dining</a>
+      <a href="#">Spa</a>
+      <a href="#">Events</a>
+    </div>
+    <div class="footer-col">
+      <h4>Contact</h4>
+      <a href="#">+91 98765 43210</a>
+      <a href="#">hello@xansa.com</a>
+      <a href="#">Bhopal, MP, India</a>
+      <a href="#">Support &amp; FAQ</a>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <p>© 2025 <span>Xansa Stay</span>. All rights reserved.</p>
+    <p>Crafted with care for luxury seekers</p>
+  </div>
+</footer>
+
+
+<!-- ======= SCRIPTS ======= -->
+<script>
+
+  /* ─────────────────────────────────────────────────────────────
+     SweetAlert2 — shared Xansa Stay mixin.
+     Visual theming (popup shell, icon colors, button styles) lives
+     in profile.css now, NOT injected here — keeps every page's
+     popups visually identical instead of fighting CSS load order.
+     ───────────────────────────────────────────────────────────── */
+  const xansaSwal = Swal.mixin({
+    customClass: {
+      confirmButton: 'swal-btn-confirm',
+      cancelButton:  'swal-btn-cancel',
+    },
+    buttonsStyling: false,
+    fontFamily:     'Inter, sans-serif',
+  });
+
+
+  /* ─────────────────────────────────────────────────────────────
+     On DOM ready: show flash toasts fired from the server.
+     ───────────────────────────────────────────────────────────── */
+  document.addEventListener('DOMContentLoaded', function () {
+
+    /* 1. Profile saved successfully */
+    if (document.getElementById('flashProfileUpdated')) {
+      xansaSwal.fire({
+        icon:              'success',
+        title:             'Saved!',
+        text:              'Your profile has been updated successfully.',
+        confirmButtonText: 'Great',
+        customClass: { confirmButton: 'swal-btn-confirm' },
+      });
+    }
+
+    /* 2. Profile update error */
+    const errEl = document.getElementById('flashProfileError');
+    if (errEl) {
+      xansaSwal.fire({
+        icon:              'error',
+        title:             'Oops!',
+        text:              errEl.dataset.msg || 'Something went wrong. Please try again.',
+        confirmButtonText: 'OK',
+        customClass: { confirmButton: 'swal-btn-confirm' },
+      });
+    }
+
+  });
+
+
+  /* ─────────────────────────────────────────────────────────────
+     Tab switching
+     ───────────────────────────────────────────────────────────── */
+  function showTab(name, el) {
+    document.querySelectorAll('.tab-section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.quick-link').forEach(l => l.classList.remove('active'));
+    document.getElementById('tab-' + name).classList.add('active');
+    if (el) el.classList.add('active');
+  }
+
+
+  /* ─────────────────────────────────────────────────────────────
+     Avatar live preview
+     ───────────────────────────────────────────────────────────── */
+  function previewAvatar(input) {
+    if (input.files && input.files[0]) {
+      const reader = new FileReader();
+      reader.onload = e => document.getElementById('avatarPreview').src = e.target.result;
+      reader.readAsDataURL(input.files[0]);
+    }
+  }
+
+
+  /* ─────────────────────────────────────────────────────────────
+     Client-side form validation
+     ───────────────────────────────────────────────────────────── */
+  function validateForm() {
+    let valid = true;
+
+    const name    = document.getElementById('name').value.trim();
+    const nameErr = document.getElementById('nameError');
+    if (!name) {
+      nameErr.textContent = 'Full name is required.';
+      valid = false;
+    } else if (name.length < 2) {
+      nameErr.textContent = 'Name must be at least 2 characters.';
+      valid = false;
+    } else {
+      nameErr.textContent = '';
+    }
+
+    const contact    = document.getElementById('contact').value.trim();
+    const contactErr = document.getElementById('contactError');
+    if (!contact) {
+      contactErr.textContent = 'Phone number is required.';
+      valid = false;
+    } else if (!/^\d{10}$/.test(contact)) {
+      contactErr.textContent = 'Enter a valid 10-digit number.';
+      valid = false;
+    } else {
+      contactErr.textContent = '';
+    }
+
+    return valid;
+  }
+
+
+  /* ─────────────────────────────────────────────────────────────
+     Logout — SweetAlert2 confirmation before navigating away
+     ───────────────────────────────────────────────────────────── */
+  function confirmLogout() {
+    xansaSwal.fire({
+      icon:              'question',
+      title:             'Log Out?',
+      text:              'Are you sure you want to log out of your account?',
+      showCancelButton:  true,
+      confirmButtonText: 'Yes, Logout',
+      cancelButtonText:  'Cancel',
+      reverseButtons:    true,
+      focusCancel:       true,
+    }).then(result => {
+      if (result.isConfirmed) {
+        window.location.href = '/logout';
+      }
+    });
+  }
+
+
+  /* ─────────────────────────────────────────────────────────────
+     Delete Account — SweetAlert2 two-step confirmation
+     Step 1 : warning + cancel / confirm
+     Step 2 : success toast → redirect
+     ───────────────────────────────────────────────────────────── */
+  function confirmDeleteAccount() {
+    xansaSwal.fire({
+      icon:              'warning',
+      title:             'Delete Account?',
+      html:              'This action <strong>cannot be undone</strong>. Your account and all associated data will be <strong>permanently deleted</strong>, and you will be logged out immediately.',
+      showCancelButton:  true,
+      confirmButtonText: 'Yes, Delete My Account',
+      cancelButtonText:  'Cancel',
+      customClass: {
+        confirmButton: 'swal-btn-danger',
+        cancelButton:  'swal-btn-cancel',
+      },
+      reverseButtons:    true,
+      focusCancel:       true,
+    }).then(result => {
+      if (result.isConfirmed) {
+        xansaSwal.fire({
+          icon:             'success',
+          title:            'Account Deleted',
+          text:             'Your account has been permanently deleted. We hope to see you again.',
+          timer:            2200,
+          timerProgressBar: true,
+          showConfirmButton: false,
+          allowOutsideClick: false,
+        }).then(() => {
+          document.getElementById('deleteAccountForm').submit();
+        });
+      }
+    });
+  }
+
+
+  /* ─────────────────────────────────────────────────────────────
+     Favourites: remove card with fade-out animation
+     ───────────────────────────────────────────────────────────── */
+  async function removeFav(btn) {
+    const roomId = btn.getAttribute('data-roomid');
+    const card = btn.closest('.room-card');
+
+    try {
+      if (roomId) {
+        await fetch('/api/favourites/toggle/' + roomId, { method: 'POST' });
+      }
+    } catch (e) {
+      console.error(e);
+    }
+
+    card.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+    card.style.opacity    = '0';
+    card.style.transform  = 'scale(0.93)';
+    setTimeout(() => {
+      card.remove();
+      const remaining = document.querySelectorAll('.fav-rooms-grid .room-card');
+      if (remaining.length === 0) {
+        document.getElementById('favEmpty').style.display = 'flex';
+      }
+    }, 300);
+  }
+
+</script>
+
+</body>
+</html>

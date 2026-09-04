@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Room Management — XansaStays</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --green-900: #1a3a26;
+            --green-700: #256337;
+            --green-600: #2d6a4f;
+            --green-500: #3a8a62;
+            --green-400: #52a87a;
+            --green-100: #d6ede2;
+            --green-50:  #eef7f2;
+            --slate-900: #0f172a;
+            --slate-700: #334155;
+            --slate-500: #64748b;
+            --slate-400: #94a3b8;
+            --slate-200: #e2e8f0;
+            --slate-100: #f1f5f9;
+            --slate-50:  #f8fafc;
+            --white:     #ffffff;
+            --red-600:   #dc2626;
+            --red-50:    #fef2f2;
+            --amber-600: #d97706;
+            --amber-50:  #fffbeb;
+            --blue-600:  #2563eb;
+            --blue-50:   #eff6ff;
+            --radius-sm: 6px;
+            --radius-md: 10px;
+            --radius-lg: 14px;
+            --radius-xl: 20px;
+            --shadow-sm: 0 2px 8px rgba(0,0,0,.08);
+            --shadow-md: 0 4px 20px rgba(0,0,0,.1);
+            --shadow-lg: 0 8px 40px rgba(0,0,0,.14);
+            --transition: 0.2s ease;
+            --font-display: 'Playfair Display', Georgia, serif;
+            --font-ui: 'Inter', system-ui, sans-serif;
+        }
+
+        body {
+            font-family: var(--font-ui);
+            background: var(--slate-50);
+            color: var(--slate-900);
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .page { max-width: 1400px; margin: 0 auto; padding: 36px 28px; }
+
+        /* Topbar */
+        .topbar { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 32px; }
+        .topbar h1 { font-family: var(--font-display); font-size: 30px; font-weight: 600; color: var(--green-900); }
+        .topbar p  { font-size: 14px; color: var(--slate-500); margin-top: 4px; }
+
+        .btn-primary {
+            display: inline-flex; align-items: center; gap: 7px;
+            background: var(--green-600); color: var(--white);
+            border: none; padding: 11px 20px;
+            border-radius: var(--radius-md);
+            font-size: 14px; font-weight: 500; cursor: pointer;
+            transition: background var(--transition), transform var(--transition);
+        }
+        .btn-primary:hover { background: var(--green-700); transform: translateY(-1px); }
+
+        /* Stats */
+        .stats-row {
+            display: grid; grid-template-columns: repeat(4, 1fr);
+            gap: 14px; margin-bottom: 24px;
+        }
+        .stat-card {
+            background: var(--white); border: 1.5px solid var(--slate-200);
+            border-radius: var(--radius-lg); padding: 16px 18px;
+            display: flex; align-items: center; gap: 14px;
+        }
+        .stat-icon {
+            width: 42px; height: 42px; border-radius: var(--radius-md);
+            display: flex; align-items: center; justify-content: center; font-size: 20px;
+        }
+        .stat-icon.total  { background: var(--green-50); }
+        .stat-icon.avail  { background: #d4edda; }
+        .stat-icon.booked { background: var(--blue-50); }
+        .stat-icon.maint  { background: var(--amber-50); }
+        .stat-info p  { font-size: 12px; color: var(--slate-500); }
+        .stat-info h3 { font-size: 22px; font-weight: 700; color: var(--slate-900); margin-top: 2px; }
+
+        /* Toolbar */
+        .toolbar {
+            display: flex; justify-content: space-between;
+            align-items: center; gap: 12px; margin-bottom: 24px; flex-wrap: wrap;
+        }
+        .toolbar-left { display: flex; gap: 10px; flex: 1; flex-wrap: wrap; }
+
+        .search-wrap { position: relative; flex: 0 0 280px; }
+        .search-wrap svg { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); color: var(--slate-400); }
+        .search-wrap input {
+            width: 100%; padding: 10px 14px 10px 38px;
+            border: 1.5px solid var(--slate-200); border-radius: var(--radius-md);
+            font-size: 14px; outline: none; background: var(--white);
+            transition: border-color var(--transition), box-shadow var(--transition);
+        }
+        .search-wrap input:focus { border-color: var(--green-500); box-shadow: 0 0 0 3px rgba(45,106,79,.12); }
+        .search-wrap input::placeholder { color: var(--slate-400); }
+
+        .filter-select {
+            padding: 10px 32px 10px 14px;
+            border: 1.5px solid var(--slate-200); border-radius: var(--radius-md);
+            font-size: 14px; color: var(--slate-700); background: var(--white);
+            cursor: pointer; outline: none; appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+            background-repeat: no-repeat; background-position: right 10px center;
+            transition: border-color var(--transition);
+        }
+        .filter-select:focus { border-color: var(--green-500); }
+
+        .view-toggle { display: flex; background: var(--slate-100); border-radius: var(--radius-md); padding: 3px; gap: 2px; }
+        .view-btn {
+            background: none; border: none; padding: 7px 12px;
+            border-radius: var(--radius-sm); cursor: pointer;
+            color: var(--slate-500); transition: all var(--transition); display: flex; align-items: center;
+        }
+        .view-btn.active { background: var(--white); color: var(--green-600); box-shadow: 0 1px 2px rgba(0,0,0,.06); }
+
+        /* Card Grid */
+        .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 20px; }
+
+        .room-card {
+            background: var(--white); border: 1.5px solid var(--slate-200);
+            border-radius: var(--radius-xl); overflow: hidden;
+            transition: transform var(--transition), box-shadow var(--transition);
+        }
+        .room-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
+
+        .card-img-wrap { position: relative; overflow: hidden; }
+        .card-img { width: 100%; height: 190px; object-fit: cover; display: block; transition: transform 0.4s ease; }
+        .room-card:hover .card-img { transform: scale(1.04); }
+        .card-img-placeholder {
+            width: 100%; height: 190px;
+            background: linear-gradient(135deg, var(--green-50), var(--green-100));
+            display: flex; align-items: center; justify-content: center; font-size: 44px;
+        }
+        .card-badge-wrap {
+            position: absolute; top: 12px; left: 12px; right: 12px;
+            display: flex; justify-content: space-between;
+        }
+        .pill-status {
+            background: rgba(255,255,255,.95); backdrop-filter: blur(4px);
+            font-size: 11px; font-weight: 600; padding: 4px 11px; border-radius: 99px;
+        }
+        .pill-roomno {
+            background: rgba(15,23,42,.65); backdrop-filter: blur(4px);
+            color: #fff; font-size: 11px; font-weight: 600; padding: 4px 11px; border-radius: 99px;
+        }
+
+        .card-body { padding: 16px 18px 18px; }
+        .card-title { font-size: 16px; font-weight: 700; color: var(--slate-900); margin-bottom: 8px; }
+        .card-meta { display: flex; flex-wrap: wrap; gap: 10px; font-size: 12.5px; color: var(--slate-500); margin-bottom: 13px; }
+        .card-meta span { display: flex; align-items: center; gap: 4px; }
+        .card-sep { border: none; border-top: 1.5px solid var(--slate-100); margin: 12px 0; }
+        .card-footer { display: flex; justify-content: space-between; align-items: center; margin-bottom: 13px; }
+        .price-main { font-size: 21px; font-weight: 700; color: var(--slate-900); }
+        .price-sub  { font-size: 12px; color: var(--slate-400); }
+        .price-tax  { font-size: 11px; color: var(--slate-400); margin-top: 1px; }
+
+        .status-pill {
+            display: inline-flex; align-items: center; gap: 5px;
+            padding: 4px 11px; border-radius: 99px;
+            font-size: 11.5px; font-weight: 600;
+        }
+        .status-pill::before { content: ''; width: 6px; height: 6px; border-radius: 50%; }
+        .status-pill.available   { background: #d4edda; color: #155724; }
+        .status-pill.available::before   { background: #28a745; }
+        .status-pill.booked      { background: var(--blue-50); color: #1e40af; }
+        .status-pill.booked::before      { background: var(--blue-600); }
+        .status-pill.maintenance { background: var(--amber-50); color: #92400e; }
+        .status-pill.maintenance::before { background: var(--amber-600); }
+
+        .card-actions { display: flex; gap: 8px; }
+        .btn-edit, .btn-delete {
+            flex: 1; padding: 8px 0; border: none;
+            border-radius: var(--radius-sm); font-size: 13px; font-weight: 500;
+            cursor: pointer; transition: all var(--transition);
+        }
+        .btn-edit   { background: var(--blue-50);  color: var(--blue-600); border: 1.5px solid #bfdbfe; }
+        .btn-delete { background: var(--red-50);   color: var(--red-600);  border: 1.5px solid #fecaca; }
+        .btn-edit:hover   { background: var(--blue-600); color: #fff; border-color: var(--blue-600); }
+        .btn-delete:hover { background: var(--red-600);  color: #fff; border-color: var(--red-600); }
+
+        /* Table */
+        .table-wrap { background: var(--white); border: 1.5px solid var(--slate-200); border-radius: var(--radius-lg); overflow: hidden; }
+        table { width: 100%; border-collapse: collapse; }
+        thead { background: var(--green-600); }
+        thead th { padding: 14px 16px; text-align: left; font-size: 13px; font-weight: 500; color: rgba(255,255,255,.85); }
+        tbody tr { border-bottom: 1px solid var(--slate-100); transition: background var(--transition); }
+        tbody tr:last-child { border-bottom: none; }
+        tbody tr:hover { background: var(--slate-50); }
+        tbody td { padding: 14px 16px; font-size: 14px; color: var(--slate-700); vertical-align: middle; }
+        .tbl-img { width: 64px; height: 46px; object-fit: cover; border-radius: var(--radius-sm); border: 1.5px solid var(--slate-200); }
+        .tbl-actions { display: flex; gap: 8px; }
+        .tbl-actions .btn-edit, .tbl-actions .btn-delete { flex: none; padding: 6px 14px; }
+
+        /* Empty */
+        .empty-state { text-align: center; padding: 64px 20px; grid-column: 1 / -1; }
+        .empty-state .icon { font-size: 48px; margin-bottom: 14px; opacity: .5; }
+        .empty-state h3 { font-size: 17px; font-weight: 600; color: var(--slate-700); margin-bottom: 6px; }
+        .empty-state p  { font-size: 14px; color: var(--slate-400); }
+
+        /* Modal */
+        .modal-overlay {
+            display: none; position: fixed; inset: 0;
+            background: rgba(15,23,42,.55); backdrop-filter: blur(3px);
+            z-index: 1000; justify-content: center; align-items: center; padding: 20px;
+        }
+        .modal-overlay.open { display: flex; }
+        .modal-box {
+            background: var(--white); width: 100%; max-width: 860px;
+            max-height: 92vh; border-radius: var(--radius-xl);
+            overflow-y: auto; box-shadow: var(--shadow-lg);
+            animation: slideUp .25s ease;
+        }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+        .modal-head {
+            position: sticky; top: 0; background: var(--white);
+            border-bottom: 1.5px solid var(--slate-100);
+            padding: 20px 24px; display: flex; justify-content: space-between; align-items: center; z-index: 1;
+        }
+        .modal-head h2 { font-family: var(--font-display); font-size: 20px; color: var(--green-900); font-weight: 600; }
+        .btn-close {
+            width: 34px; height: 34px; border: 1.5px solid var(--slate-200);
+            border-radius: var(--radius-md); background: var(--white);
+            cursor: pointer; font-size: 18px; color: var(--slate-500);
+            display: flex; align-items: center; justify-content: center;
+            transition: all var(--transition);
+        }
+        .btn-close:hover { background: var(--slate-100); color: var(--slate-900); }
+
+        .modal-body { padding: 24px; }
+
+        .section-label {
+            font-size: 11px; font-weight: 700; color: var(--slate-400);
+            letter-spacing: 1px; text-transform: uppercase;
+            margin-bottom: 14px; display: flex; align-items: center; gap: 8px;
+        }
+        .section-label::after { content: ''; flex: 1; height: 1px; background: var(--slate-100); }
+
+        .form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 24px; }
+        .col-2 { grid-column: 1 / 3; }
+
+        .form-group { display: flex; flex-direction: column; gap: 6px; }
+        .form-group label { font-size: 13px; font-weight: 500; color: var(--slate-700); }
+        .form-group input, .form-group select, .form-group textarea {
+            padding: 10px 13px; border: 1.5px solid var(--slate-200);
+            border-radius: var(--radius-md); font-family: var(--font-ui);
+            font-size: 14px; color: var(--slate-900); background: var(--white);
+            outline: none; transition: border-color var(--transition), box-shadow var(--transition);
+        }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            border-color: var(--green-500); box-shadow: 0 0 0 3px rgba(45,106,79,.1);
+        }
+        .form-group input::placeholder, .form-group textarea::placeholder { color: var(--slate-400); }
+        .form-group select {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+            background-repeat: no-repeat; background-position: right 12px center; padding-right: 36px;
+        }
+        .form-group textarea { resize: vertical; min-height: 90px; }
+
+        /* Facilities */
+        .facility-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 24px; }
+        .facility-chip {
+            display: flex; align-items: center; gap: 9px; padding: 10px 13px;
+            border: 1.5px solid var(--slate-200); border-radius: var(--radius-md);
+            cursor: pointer; transition: all var(--transition); user-select: none;
+        }
+        .facility-chip:hover { border-color: var(--green-400); background: var(--green-50); }
+        .facility-chip input[type="checkbox"] { display: none; }
+        .facility-chip.checked { border-color: var(--green-500); background: var(--green-50); }
+        .chip-icon { font-size: 18px; }
+        .chip-text { font-size: 13px; color: var(--slate-700); }
+        .chip-check {
+            margin-left: auto; width: 18px; height: 18px;
+            border: 2px solid var(--slate-300); border-radius: 5px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 11px; transition: all var(--transition);
+        }
+        .facility-chip.checked .chip-check { background: var(--green-600); border-color: var(--green-600); color: white; }
+
+        .btn-save {
+            width: 100%; padding: 14px; background: var(--green-600);
+            color: var(--white); border: none; border-radius: var(--radius-md);
+            font-size: 15px; font-weight: 600; cursor: pointer;
+            transition: background var(--transition), transform var(--transition);
+        }
+        .btn-save:hover { background: var(--green-700); transform: translateY(-1px); }
+
+        @media (max-width: 900px) { .stats-row { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 640px) {
+            .page { padding: 20px 16px; }
+            .form-grid { grid-template-columns: 1fr; }
+            .col-2 { grid-column: 1; }
+            .facility-grid { grid-template-columns: repeat(2, 1fr); }
+            .stats-row { grid-template-columns: repeat(2, 1fr); }
+        }
+    </style>
+</head>
+<body>
+<div class="page">
+
+    <div class="topbar">
+        <div>
+            <h1>Room Management</h1>
+            <p>Manage all hotel rooms · XansaStays</p>
+        </div>
+        <button class="btn-primary" onclick="openModal()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add Room
+        </button>
+    </div>
+
+    <div class="stats-row" id="statsRow"></div>
+
+    <div class="toolbar">
+        <div class="toolbar-left">
+            <div class="search-wrap">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input type="text" id="searchInput" placeholder="Search rooms…" oninput="renderRooms()">
+            </div>
+            <select class="filter-select" id="statusFilter" onchange="renderRooms()">
+                <option value="">All Status</option>
+                <option value="AVAILABLE">Available</option>
+                <option value="BOOKED">Booked</option>
+            </select>
+        </div>
+        <div class="view-toggle">
+            <button class="view-btn active" id="btnCard" onclick="setView('card')" title="Card view">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+            </button>
+            <button class="view-btn" id="btnTable" onclick="setView('table')" title="Table view">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+            </button>
+        </div>
+    </div>
+
+    <div class="card-grid" id="cardGrid"></div>
+    <div class="table-wrap" id="tableWrap" style="display:none;">
+        <table>
+            <thead>
+            <tr>
+                <th>Image</th><th>Room No</th><th>Name</th><th>Type</th>
+                <th>Price / Night</th><th>Status</th><th>Guests</th><th>Actions</th>
+            </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+        </table>
+    </div>
+
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modalOverlay">
+    <div class="modal-box">
+        <div class="modal-head">
+            <h2 id="modalTitle">Add New Room</h2>
+            <button class="btn-close" onclick="closeModal()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="section-label">Room Details</div>
+            <div class="form-grid">
+                <div class="form-group"><label>Room Number</label><input type="text" id="roomNumber" placeholder="e.g. 101"></div>
+                <div class="form-group"><label>Room Name</label><input type="text" id="roomName" placeholder="e.g. Deluxe King Room"></div>
+                <div class="form-group">
+                    <label>Room Type</label>
+                    <select id="roomType">
+                        <option value="SINGLE">Single</option>
+                        <option value="DOUBLE">Double</option>
+                        <option value="SUITE">Suite</option>
+                        <option value="DORMITORY">Dormitory</option>
+                    </select>
+                </div>
+                <div class="form-group"><label>Price Per Night (₹)</label><input type="number" id="price" placeholder="e.g. 8500" min="0"></div>
+                <div class="form-group">
+                    <label>Status</label>
+                    <select id="status">
+                        <option value="AVAILABLE">Available</option>
+                        <option value="BOOKED">Booked</option>
+                    </select>
+                </div>
+                <div class="form-group"><label>Max Guests</label><input type="number" id="maxGuests" placeholder="e.g. 2" min="1"></div>
+                <div class="form-group"><label>Area (m²)</label><input type="number" id="areaSqm" placeholder="e.g. 45"></div>
+                <div class="form-group"><label>Bed Type</label><input type="text" id="bedType" placeholder="e.g. King Size"></div>
+                <div class="form-group"><label>View Type</label><input type="text" id="viewType" placeholder="e.g. Garden View"></div>
+                <div class="form-group col-2"><label>Description</label><textarea id="description" placeholder="Short description of this room…"></textarea></div>
+                <div class="form-group col-2"><label>Upload Images</label><input type="file" id="imgInput" multiple accept="image/*"></div>
+            </div>
+
+            <div class="section-label">Facilities</div>
+            <div class="facility-grid" id="facilityGrid"></div>
+
+            <button class="btn-save" onclick="saveRoom()">Save Room</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let rooms = [];
+    let editId = null;
+    let currentView = 'card';
+
+    const FACILITIES = [
+        { id: 'wifi',             label: 'WiFi',              icon: '📶' },
+        { id: 'parking',          label: 'Parking',           icon: '🅿️' },
+        { id: 'gym',              label: 'Gym',               icon: '🏋️' },
+        { id: 'garden',           label: 'Garden',            icon: '🌿' },
+        { id: 'spa',              label: 'Spa',               icon: '💆' },
+        { id: 'lift',             label: 'Lift',              icon: '🛗' },
+        { id: 'laundry',          label: 'Laundry',           icon: '👕' },
+        { id: 'roomService',      label: 'Room Service',      icon: '🍽️' },
+        { id: 'attachedBathroom', label: 'Attached Bathroom', icon: '🚿' },
+        { id: 'swimmingPool',     label: 'Swimming Pool',     icon: '🏊' },
+        { id: 'gameZone',         label: 'Game Zone',         icon: '🎮' },
+        { id: 'emergencyService', label: 'Emergency Service', icon: '🚨' },
+    ];
+
+    // Build facility chips
+    document.getElementById('facilityGrid').innerHTML = FACILITIES.map(f => `
+        <label class="facility-chip" id="chip-${f.id}" onclick="toggleChip('${f.id}')">
+            <input type="checkbox" id="fac-${f.id}">
+            <span class="chip-icon">${f.icon}</span>
+            <span class="chip-text">${f.label}</span>
+            <span class="chip-check">✓</span>
+        </label>`).join('');
+
+    function toggleChip(id) {
+        const cb = document.getElementById('fac-' + id);
+        cb.checked = !cb.checked;
+        document.getElementById('chip-' + id).classList.toggle('checked', cb.checked);
+    }
+
+    function statusPill(s) {
+        const cls = { AVAILABLE: 'available', BOOKED: 'booked', MAINTENANCE: 'maintenance' };
+        const lbl = { AVAILABLE: 'Available', BOOKED: 'Booked', MAINTENANCE: 'Maintenance' };
+        return `<span class="status-pill ${cls[s] || 'available'}">${lbl[s] || s}</span>`;
+    }
+
+    function fmtPrice(p) {
+        return '₹' + Number(p || 0).toLocaleString('en-IN');
+    }
+
+    function updateStats() {
+        const total  = rooms.length;
+        const avail  = rooms.filter(r => r.status === 'AVAILABLE').length;
+        const booked = rooms.filter(r => r.status === 'BOOKED').length;
+        const maint  = rooms.filter(r => !['AVAILABLE','BOOKED'].includes(r.status)).length;
+        document.getElementById('statsRow').innerHTML = `
+            <div class="stat-card"><div class="stat-icon total">🏨</div><div class="stat-info"><p>Total Rooms</p><h3>${total}</h3></div></div>
+            <div class="stat-card"><div class="stat-icon avail">✅</div><div class="stat-info"><p>Available</p><h3>${avail}</h3></div></div>
+            <div class="stat-card"><div class="stat-icon booked">📅</div><div class="stat-info"><p>Booked</p><h3>${booked}</h3></div></div>
+            <div class="stat-card"><div class="stat-icon maint">🔧</div><div class="stat-info"><p>Maintenance</p><h3>${maint}</h3></div></div>`;
+    }
+
+    function setView(v) {
+        currentView = v;
+        document.getElementById('btnCard').classList.toggle('active', v === 'card');
+        document.getElementById('btnTable').classList.toggle('active', v === 'table');
+        document.getElementById('cardGrid').style.display  = v === 'card'  ? 'grid'  : 'none';
+        document.getElementById('tableWrap').style.display = v === 'table' ? 'block' : 'none';
+        renderRooms();
+    }
+
+    function getFiltered() {
+        const q  = document.getElementById('searchInput').value.toLowerCase();
+        const sf = document.getElementById('statusFilter').value;
+        return rooms.filter(r => {
+            const match = (r.roomName || '').toLowerCase().includes(q) ||
+                (r.roomNumber || '').toLowerCase().includes(q) ||
+                (r.roomType || '').toLowerCase().includes(q);
+            return match && (!sf || r.status === sf);
+        });
+    }
+
+    function renderCards() {
+        const data = getFiltered();
+        const grid = document.getElementById('cardGrid');
+        if (!data.length) {
+            grid.innerHTML = `<div class="empty-state"><div class="icon">🔍</div><h3>No rooms found</h3><p>Try a different search or filter.</p></div>`;
+            return;
+        }
+        grid.innerHTML = data.map(r => `
+            <div class="room-card">
+                <div class="card-img-wrap">
+                    ${r.imageUrl
+            ? `<img class="card-img" src="${r.imageUrl}" alt="${r.roomName}" loading="lazy">`
+            : `<div class="card-img-placeholder">🏨</div>`}
+                    <div class="card-badge-wrap">
+                        <span class="pill-status">${r.roomType}</span>
+                        <span class="pill-roomno">No. ${r.roomNumber}</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="card-title">${r.roomName}</div>
+                    <div class="card-meta">
+                        ${r.areaSqm  ? `<span>📐 ${r.areaSqm} m²</span>` : ''}
+                        <span>👥 ${r.maxGuests || 1} Guest${(r.maxGuests || 1) > 1 ? 's' : ''}</span>
+                        ${r.viewType ? `<span>🌿 ${r.viewType}</span>` : ''}
+                        ${r.bedType  ? `<span>🛏 ${r.bedType}</span>`  : ''}
+                    </div>
+                    <hr class="card-sep">
+                    <div class="card-footer">
+                        <div>
+                            <div><span class="price-main">${fmtPrice(r.price)}</span><span class="price-sub"> / night</span></div>
+                            <div class="price-tax">Taxes included</div>
+                        </div>
+                        ${statusPill(r.status)}
+                    </div>
+                    <div class="card-actions">
+                        <button class="btn-edit"   onclick="editRoom(${r.id})">Edit</button>
+                        <button class="btn-delete" onclick="deleteRoom(${r.id})">Delete</button>
+                    </div>
+                </div>
+            </div>`).join('');
+    }
+
+    function renderTable() {
+        const data = getFiltered();
+        const tbody = document.getElementById('tableBody');
+        if (!data.length) {
+            tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:48px;color:var(--slate-400);">No rooms found</td></tr>`;
+            return;
+        }
+        tbody.innerHTML = data.map(r => `
+            <tr>
+                <td>${r.imageUrl ? `<img src="${r.imageUrl}" class="tbl-img">` : '🏨'}</td>
+                <td><strong>${r.roomNumber}</strong></td>
+                <td>${r.roomName}</td>
+                <td>${r.roomType}</td>
+                <td><strong>${fmtPrice(r.price)}</strong></td>
+                <td>${statusPill(r.status)}</td>
+                <td>${r.maxGuests || 1}</td>
+                <td>
+                    <div class="tbl-actions">
+                        <button class="btn-edit"   onclick="editRoom(${r.id})">Edit</button>
+                        <button class="btn-delete" onclick="deleteRoom(${r.id})">Delete</button>
+                    </div>
+                </td>
+            </tr>`).join('');
+    }
+
+    function renderRooms() {
+        updateStats();
+        currentView === 'card' ? renderCards() : renderTable();
+    }
+
+    async function loadRooms() {
+        document.getElementById('cardGrid').innerHTML = `<div class="empty-state"><div class="icon">⏳</div><h3>Loading rooms…</h3></div>`;
+        try {
+            const res = await fetch('/admin/rooms/api');
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            const data = await res.json();
+            rooms = data.map(r => ({
+                id:          r.roomId,
+                roomNumber:  r.roomNumber,
+                roomName:    r.name,
+                roomType:    r.roomType,
+                price:       r.pricePerDay,
+                status:      r.status,
+                maxGuests:   r.maxGuests,
+                areaSqm:     r.areaSqm,
+                bedType:     r.bedType,
+                viewType:    r.viewType,
+                description: r.description,
+                facilities:  r.facilities || '',
+                imageUrl:    r.images && r.images.length > 0
+                    ? `/admin/rooms/image/${r.images[0].imageId}`
+                    : null
+            }));
+            renderRooms();
+        } catch (e) {
+            console.error(e);
+            document.getElementById('cardGrid').innerHTML = `<div class="empty-state"><div class="icon">⚠️</div><h3>Could not load rooms</h3><p>${e.message}</p></div>`;
+        }
+    }
+
+    function openModal(id = null) {
+        editId = id;
+        const r = id ? rooms.find(x => x.id === id) : null;
+        document.getElementById('modalTitle').textContent = id ? 'Edit Room' : 'Add New Room';
+        document.getElementById('roomNumber').value  = r ? r.roomNumber  : '';
+        document.getElementById('roomName').value    = r ? r.roomName    : '';
+        document.getElementById('roomType').value    = r ? r.roomType    : 'SINGLE';
+        document.getElementById('price').value       = r ? r.price       : '';
+        document.getElementById('status').value      = r ? r.status      : 'AVAILABLE';
+        document.getElementById('maxGuests').value   = r ? r.maxGuests   : '';
+        document.getElementById('areaSqm').value     = r ? r.areaSqm     : '';
+        document.getElementById('bedType').value     = r ? r.bedType     : '';
+        document.getElementById('viewType').value    = r ? r.viewType    : '';
+        document.getElementById('description').value = r ? r.description || '' : '';
+
+        const facilityList = r && r.facilities ? r.facilities.split(',').map(s => s.trim()) : [];
+        FACILITIES.forEach(f => {
+            const checked = facilityList.includes(f.label);
+            document.getElementById('fac-' + f.id).checked = checked;
+            document.getElementById('chip-' + f.id).classList.toggle('checked', checked);
+        });
+
+        document.getElementById('modalOverlay').classList.add('open');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeModal() {
+        document.getElementById('modalOverlay').classList.remove('open');
+        document.body.style.overflow = '';
+        // Reset form
+        ['roomNumber','roomName','price','maxGuests','areaSqm','bedType','viewType','description'].forEach(id => {
+            document.getElementById(id).value = '';
+        });
+        document.getElementById('roomType').value = 'SINGLE';
+        document.getElementById('status').value   = 'AVAILABLE';
+        document.getElementById('imgInput').value = '';
+        FACILITIES.forEach(f => {
+            document.getElementById('fac-' + f.id).checked = false;
+            document.getElementById('chip-' + f.id).classList.remove('checked');
+        });
+        editId = null;
+    }
+
+    function editRoom(id) { openModal(id); }
+
+    async function deleteRoom(id) {
+        if (!confirm('Delete this room? This cannot be undone.')) return;
+        try {
+            const res = await fetch(`/admin/rooms/delete/${id}`, { method: 'POST' });
+            if (res.ok) { await loadRooms(); }
+            else { alert('Failed to delete room.'); }
+        } catch (e) { alert('Server error.'); }
+    }
+
+    async function saveRoom() {
+        const roomNumber = document.getElementById('roomNumber').value.trim();
+        const roomName   = document.getElementById('roomName').value.trim();
+        if (!roomNumber || !roomName) { alert('Room Number and Name are required.'); return; }
+
+        const formData = new FormData();
+        formData.append('roomNumber',  roomNumber);
+        formData.append('name',        roomName);
+        formData.append('roomType',    document.getElementById('roomType').value);
+        formData.append('pricePerDay', document.getElementById('price').value || '0');
+        formData.append('status',      document.getElementById('status').value);
+        formData.append('maxGuests',   document.getElementById('maxGuests').value || '1');
+        formData.append('areaSqm',     document.getElementById('areaSqm').value  || '0');
+        formData.append('bedType',     document.getElementById('bedType').value.trim());
+        formData.append('viewType',    document.getElementById('viewType').value.trim());
+        formData.append('description', document.getElementById('description').value.trim());
+
+        // Facilities — comma separated string
+        const facilitiesStr = FACILITIES
+            .filter(f => document.getElementById('fac-' + f.id).checked)
+            .map(f => f.label)
+            .join(',');
+        formData.append('facilities', facilitiesStr);
+
+        // Images — naam "images" hona chahiye, controller mein yahi expect ho raha hai
+        const imgInput = document.getElementById('imgInput');
+        [...imgInput.files].forEach(file => formData.append('images', file));
+
+        if (editId) formData.append('roomId', editId);
+
+        const url = editId ? '/admin/rooms/update' : '/admin/rooms/save';
+        try {
+            const res = await fetch(url, { method: 'POST', body: formData });
+            if (res.ok) {
+                closeModal();
+                await loadRooms();
+            } else {
+                const txt = await res.text();
+                console.error('Save failed:', txt);
+                alert('Failed to save room. Status: ' + res.status);
+            }
+        } catch (e) {
+            console.error(e);
+            alert('Server error.');
+        }
+    }
+
+    document.getElementById('modalOverlay').addEventListener('click', function(e) {
+        if (e.target === this) closeModal();
+    });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+    loadRooms();
+</script>
+</body>
+</html>
