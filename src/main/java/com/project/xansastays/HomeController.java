@@ -42,7 +42,7 @@ public class HomeController {
         });
     }
 
-    @GetMapping({"/Homepage"})
+    @GetMapping({"/", "/Homepage"})
     @Transactional(readOnly = true)
     public String home(Model model, Authentication authentication) {
         if (authentication != null && authentication.isAuthenticated()
