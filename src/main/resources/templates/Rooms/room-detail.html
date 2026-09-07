@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title th:text="${room.name} + ' — XansaStays'">Room Detail</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <link rel="stylesheet" th:href="@{/css/home.css}"/>
+  <style>
+    :root {
+      --clr-brand:       #3d5240;
+      --clr-brand-mid:   #4a6350;
+      --clr-gold:        #c9a84c;
+      --clr-gold-hover:  #dbbf6e;
+      --clr-white:       #ffffff;
+      --clr-bg:          #f7f6f2;
+      --clr-text:        #1c2b1e;
+      --clr-muted:       #6b7e6d;
+      --clr-border:      #e2e6e2;
+      --ff-serif:        'Playfair Display', Georgia, serif;
+      --ff-sans:         'Inter', system-ui, sans-serif;
+      --shadow-sm:       0 2px 8px rgba(0,0,0,0.07);
+      --shadow-md:       0 8px 30px rgba(0,0,0,0.10);
+      --shadow-lg:       0 20px 60px rgba(0,0,0,0.16);
+      --radius-sm:       6px;
+      --radius-md:       12px;
+      --radius-lg:       20px;
+      --nav-height:      84px;
+      --dur:             220ms;
+      --ease:            cubic-bezier(0.4,0,0.2,1);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: var(--ff-sans); color: var(--clr-text); background: var(--clr-bg); padding-top: var(--nav-height); }
+    a { text-decoration: none; }
+
+    /* ── HERO CAROUSEL ── */
+    .carousel-wrap {
+      position: relative;
+      width: calc(100% - 10rem);
+      max-width: 1160px;
+      margin: 0 auto;
+      height: 420px;
+      overflow: hidden;
+      background: #1c2b1e;
+      border-radius: 16px;
+    }
+    .carousel-track {
+      display: flex;
+      height: 100%;
+      transition: transform 0.55s cubic-bezier(0.4,0,0.2,1);
+      will-change: transform;
+    }
+    .carousel-track img {
+      min-width: 100%;
+      height: 100%;
+      object-fit: cover;
+      flex-shrink: 0;
+      user-select: none;
+      pointer-events: none;
+    }
+    /* Gradient overlay at bottom */
+    .carousel-wrap::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 180px;
+      background: linear-gradient(to top, rgba(28,43,30,0.7), transparent);
+      pointer-events: none;
+    }
+    /* Room name overlay on carousel */
+    .carousel-overlay {
+      position: absolute;
+      bottom: 36px; left: 5rem;
+      z-index: 10;
+      color: white;
+    }
+    .carousel-overlay h2 {
+      font-family: var(--ff-serif);
+      font-size: 2.4rem;
+      font-weight: 600;
+      text-shadow: 0 2px 12px rgba(0,0,0,0.4);
+    }
+    .carousel-overlay .co-badge {
+      display: inline-block;
+      background: rgba(201,168,76,0.9);
+      color: #1c2b1e;
+      font-size: .72rem;
+      font-weight: 700;
+      padding: 4px 12px;
+      border-radius: 20px;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      margin-bottom: 8px;
+    }
+    .carousel-btn {
+      position: absolute; top: 50%; transform: translateY(-50%);
+      background: rgba(255,255,255,0.9);
+      border: none; border-radius: 50%;
+      width: 46px; height: 46px;
+      font-size: 1.1rem; cursor: pointer; z-index: 10;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--clr-text); box-shadow: var(--shadow-md);
+      transition: all .2s;
+    }
+    .carousel-btn:hover { background: white; transform: translateY(-50%) scale(1.08); }
+    .carousel-btn.prev { left: 20px; }
+    .carousel-btn.next { right: 20px; }
+    .carousel-dots {
+      position: absolute; bottom: 18px; right: 5rem;
+      display: flex; gap: 7px; z-index: 10;
+    }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.45); cursor: pointer; transition: all .2s; }
+    .dot.active { background: white; transform: scale(1.3); }
+
+    /* ── BREADCRUMB ── */
+    .breadcrumb {
+      padding: 14px 5rem;
+      font-size: .8rem;
+      color: var(--clr-muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--clr-white);
+      border-bottom: 1px solid var(--clr-border);
+    }
+    .breadcrumb a { color: var(--clr-muted); }
+    .breadcrumb a:hover { color: var(--clr-brand); }
+    .breadcrumb span { color: var(--clr-brand); font-weight: 600; }
+
+    /* ── PAGE LAYOUT ── */
+    .page-wrap {
+      max-width: 1160px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 2.5rem 2rem 5rem;
+      display: grid;
+      grid-template-columns: 1fr 360px;
+      gap: 2.5rem;
+      overflow: hidden;
+    }
+
+    /* ── LEFT COLUMN ── */
+    .room-header { margin-bottom: 1.5rem; }
+    .room-title { font-family: var(--ff-serif); font-size: 2.2rem; color: var(--clr-text); margin-bottom: 8px; }
+    .room-meta-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+    .room-type-badge { background: rgba(201,168,76,.15); color: #6b5a1f; font-size: .72rem; font-weight: 700; padding: 4px 12px; border-radius: 20px; text-transform: uppercase; letter-spacing: .05em; border: 1px solid rgba(201,168,76,.3); }
+    .status-badge { display: inline-flex; align-items: center; gap: 5px; padding: 5px 14px; border-radius: 20px; font-size: .78rem; font-weight: 700; }
+    .status-available { background: #e5f6ec; color: #2E8B57; }
+    .status-booked    { background: #fbe7e5; color: #c0392b; }
+
+    /* Chips row */
+    .chips-row { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 2rem; }
+    .chip {
+      display: flex; align-items: center; gap: 8px;
+      background: var(--clr-white);
+      border: 1px solid var(--clr-border);
+      padding: 10px 18px;
+      border-radius: 50px;
+      font-size: .83rem; font-weight: 500;
+      color: var(--clr-brand);
+      box-shadow: var(--shadow-sm);
+      transition: all .2s;
+    }
+    .chip i { font-size: .85rem; color: var(--clr-gold); }
+
+    /* Section label */
+    .sec-label {
+      font-size: .7rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .1em;
+      color: var(--clr-gold);
+      margin-bottom: .75rem;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .sec-label::after { content: ''; flex: 1; height: 1px; background: linear-gradient(to right, rgba(201,168,76,.3), transparent); }
+
+    /* Description card */
+    .desc-card {
+      background: var(--clr-white);
+      border-radius: var(--radius-md);
+      padding: 1.4rem 1.5rem;
+      border-left: 3px solid var(--clr-gold);
+      font-size: .92rem;
+      line-height: 1.8;
+      color: #4a5c4c;
+      box-shadow: var(--shadow-sm);
+      margin-bottom: 2rem;
+    }
+
+    /* Facilities */
+    .fac-grid { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 2rem; }
+    .fac-tag {
+      display: flex; align-items: center; gap: 7px;
+      background: var(--clr-white);
+      border: 1px solid var(--clr-border);
+      padding: 8px 16px; border-radius: var(--radius-sm);
+      font-size: .82rem; color: var(--clr-brand); font-weight: 500;
+      transition: all .2s;
+    }
+    .fac-tag:hover { border-color: var(--clr-brand); background: #f0f4f0; }
+    .fac-tag i { color: var(--clr-gold); font-size: .8rem; }
+
+    /* Highlights */
+    .highlights-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 2rem;
+    }
+    .highlight-card {
+      background: var(--clr-white);
+      border-radius: var(--radius-md);
+      padding: 1.2rem;
+      text-align: center;
+      border: 1px solid var(--clr-border);
+      box-shadow: var(--shadow-sm);
+    }
+    .highlight-card .hi-icon { font-size: 1.6rem; margin-bottom: 8px; }
+    .highlight-card .hi-title { font-size: .8rem; font-weight: 700; color: var(--clr-brand); margin-bottom: 3px; }
+    .highlight-card .hi-sub { font-size: .72rem; color: var(--clr-muted); }
+
+    /* Gallery */
+    .rd-gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      gap: 10px;
+      margin-bottom: 2rem;
+    }
+    .rd-gallery-grid img {
+      width: 100%; height: 90px; object-fit: cover;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: transform .2s, opacity .2s;
+      border: 2px solid transparent;
+    }
+    .rd-gallery-grid img:hover { transform: scale(1.04); opacity: .9; border-color: var(--clr-gold); }
+
+    /* ── RIGHT: BOOKING CARD ── */
+    .booking-card {
+      background: var(--clr-white);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
+      padding: 2rem;
+      position: sticky;
+      top: calc(var(--nav-height) + 20px);
+      height: fit-content;
+      border: 1px solid var(--clr-border);
+      overflow: hidden;
+      min-width: 0;
+      max-width: 360px;
+    }
+    /* Gold top bar */
+    .booking-card::before {
+      content: '';
+      display: block;
+      height: 4px;
+      background: linear-gradient(90deg, var(--clr-gold), var(--clr-gold-hover));
+      margin: -2rem -2rem 1.5rem;
+    }
+    .price-row { display: flex; align-items: baseline; gap: 6px; margin-bottom: 4px; }
+    .price-big { font-family: var(--ff-serif); font-size: 2.4rem; color: var(--clr-text); font-weight: 700; }
+    .price-per { font-size: .95rem; color: var(--clr-muted); font-weight: 400; }
+    .rd-price-note { font-size: .73rem; color: var(--clr-muted); margin-bottom: 1.5rem; }
+
+    .info-rows { margin-bottom: 1.2rem; }
+    .info-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--clr-border);
+      font-size: .84rem;
+      color: var(--clr-muted);
+    }
+    .info-row:last-child { border-bottom: none; }
+    .info-row strong { color: var(--clr-text); font-weight: 600; }
+    .info-row i { color: var(--clr-gold); margin-right: 5px; }
+
+    .btn-book-now {
+      width: 100%;
+      margin-top: .5rem;
+      background: linear-gradient(135deg, var(--clr-brand) 0%, #2a4030 100%);
+      color: var(--clr-white);
+      border: none;
+      border-radius: var(--radius-md);
+      padding: 18px 24px;
+      font-size: 1rem;
+      font-weight: 700;
+      font-family: var(--ff-sans);
+      cursor: pointer;
+      letter-spacing: .04em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      transition: all var(--dur) var(--ease);
+      box-shadow: 0 4px 18px rgba(45,106,79,.35);
+    }
+    .btn-book-now::after { content: '→'; font-size: 1.1rem; transition: transform var(--dur); }
+    .btn-book-now:hover { box-shadow: 0 8px 28px rgba(45,106,79,.45); transform: translateY(-2px); }
+    .btn-book-now:hover::after { transform: translateX(4px); }
+    .btn-book-now:active { transform: translateY(0); }
+    .btn-book-now:disabled { background: #ccc; cursor: not-allowed; box-shadow: none; transform: none; }
+    .btn-book-now:disabled::after { content: ''; }
+
+    .cancel-note {
+      text-align: center; margin-top: 12px;
+      font-size: .73rem; color: var(--clr-muted);
+      display: flex; align-items: center; justify-content: center; gap: 5px;
+    }
+
+    /* Trust badges */
+    .trust-row {
+      display: flex; justify-content: space-around;
+      margin-top: 1.5rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--clr-border);
+    }
+    .trust-item { text-align: center; }
+    .trust-item i { font-size: 1.2rem; color: var(--clr-gold); display: block; margin-bottom: 4px; }
+    .trust-item span { font-size: .7rem; color: var(--clr-muted); font-weight: 500; }
+
+    @media (max-width: 900px) {
+      .page-wrap { grid-template-columns: 1fr; padding: 1.5rem 1rem 4rem; }
+      .carousel-wrap { height: 240px; border-radius: 0; }
+      .carousel-overlay { left: 1.5rem; bottom: 24px; }
+      .carousel-overlay h2 { font-size: 1.6rem; }
+      .breadcrumb { padding: 12px 1.5rem; }
+      .highlights-grid { grid-template-columns: repeat(2,1fr); }
+      .carousel-dots { right: 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══ NAV ══ -->
+<nav th:replace="~{navbar :: navbar}"></nav>
+
+<!-- ══ HERO CAROUSEL ══ -->
+<div style="background: var(--clr-bg); padding: 1.5rem 5rem 0;">
+  <div class="carousel-wrap" id="carousel">
+    <div class="carousel-track" id="carouselTrack">
+      <th:block th:if="${room.images != null and !room.images.empty}">
+        <img th:each="img : ${room.images}"
+             th:src="@{/admin/rooms/image/{id}(id=${img.imageId})}"
+             th:alt="${room.name}" draggable="false"/>
+      </th:block>
+      <th:block th:unless="${room.images != null and !room.images.empty}">
+        <div style="min-width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:6rem;background:linear-gradient(135deg,#3d5240,#4a6350)">🛏</div>
+      </th:block>
+    </div>
+    <button class="carousel-btn prev" onclick="carouselMove(-1)">&#8592;</button>
+    <button class="carousel-btn next" onclick="carouselMove(1)">&#8594;</button>
+    <div class="carousel-dots" id="carouselDots"></div>
+    <!-- Overlay -->
+    <div class="carousel-overlay">
+      <div class="co-badge" th:text="${room.roomType}">TYPE</div>
+      <h2 th:text="${room.name}">Room Name</h2>
+    </div>
+  </div>
+
+  <!-- ══ BREADCRUMB ══ -->
+</div>
+<div class="breadcrumb">
+  <a href="/Homepage"><i class="fas fa-home"></i> Home</a>
+  <i class="fas fa-chevron-right" style="font-size:.65rem;"></i>
+  <a href="/rooms">Rooms</a>
+  <i class="fas fa-chevron-right" style="font-size:.65rem;"></i>
+  <span th:text="${room.name}">Room</span>
+</div>
+
+<!-- ══ PAGE CONTENT ══ -->
+<div class="page-wrap">
+
+  <!-- LEFT -->
+  <div>
+    <!-- Header -->
+    <div class="room-header">
+      <h1 class="room-title" th:text="${room.name}">Room Name</h1>
+      <div class="room-meta-row">
+        <span class="room-type-badge" th:text="${room.roomType}">TYPE</span>
+        <span class="status-badge"
+              th:classappend="${room.status != null and room.status.name() == 'AVAILABLE'} ? 'status-available' : 'status-booked'"
+              th:text="${room.status != null and room.status.name() == 'AVAILABLE'} ? '✓ Available' : '✗ Currently Booked'">
+        </span>
+      </div>
+    </div>
+
+    <!-- Feature Chips -->
+    <div class="chips-row">
+      <span class="chip" th:if="${room.areaSqm != null}">
+        <i class="fas fa-vector-square"></i>
+        <span th:text="${room.areaSqm} + ' m²'"></span>
+      </span>
+      <span class="chip" th:if="${room.maxGuests != null}">
+        <i class="fas fa-users"></i>
+        <span th:text="${room.maxGuests} + ' Guests'"></span>
+      </span>
+      <span class="chip" th:if="${room.bedType != null and room.bedType != ''}">
+        <i class="fas fa-bed"></i>
+        <span th:text="${room.bedType}"></span>
+      </span>
+      <span class="chip" th:if="${room.viewType != null and room.viewType != ''}">
+        <i class="fas fa-mountain"></i>
+        <span th:text="${room.viewType}"></span>
+      </span>
+      <span class="chip">
+        <i class="fas fa-door-open"></i>
+        Room # <span th:text="${room.roomNumber}"></span>
+      </span>
+    </div>
+
+    <!-- Highlights -->
+    <div class="sec-label"><i class="fas fa-star"></i> Why You'll Love It</div>
+    <div class="highlights-grid">
+      <div class="highlight-card">
+        <div class="hi-icon">🛏</div>
+        <div class="hi-title">Luxury Bedding</div>
+        <div class="hi-sub">Premium mattress & linens</div>
+      </div>
+      <div class="highlight-card">
+        <div class="hi-icon">🌿</div>
+        <div class="hi-title">Fresh Air</div>
+        <div class="hi-sub">Daily housekeeping</div>
+      </div>
+      <div class="highlight-card">
+        <div class="hi-icon">📶</div>
+        <div class="hi-title">Fast Wi-Fi</div>
+        <div class="hi-sub">High-speed internet</div>
+      </div>
+      <div class="highlight-card">
+        <div class="hi-icon">🍽</div>
+        <div class="hi-title">Room Service</div>
+        <div class="hi-sub">24/7 in-room dining</div>
+      </div>
+      <div class="highlight-card">
+        <div class="hi-icon">🔐</div>
+        <div class="hi-title">Secure Stay</div>
+        <div class="hi-sub">Digital lock & safe</div>
+      </div>
+      <div class="highlight-card">
+        <div class="hi-icon">❄️</div>
+        <div class="hi-title">Climate Control</div>
+        <div class="hi-sub">AC & heating</div>
+      </div>
+    </div>
+
+    <!-- About -->
+    <div th:if="${room.description != null and room.description != ''}">
+      <div class="sec-label" style="margin-top:1.5rem;"><i class="fas fa-info-circle"></i> About This Room</div>
+      <div class="desc-card" th:text="${room.description}"></div>
+    </div>
+
+    <!-- Facilities -->
+    <div th:if="${room.facilities != null and room.facilities != ''}">
+      <div class="sec-label" style="margin-top:1.5rem;"><i class="fas fa-concierge-bell"></i> Facilities</div>
+      <div class="fac-grid">
+        <span class="fac-tag"
+              th:each="fac : ${#strings.arraySplit(room.facilities, ',')}"
+              th:text="${#strings.trim(fac)}">
+        </span>
+      </div>
+    </div>
+
+    <!-- Gallery -->
+    <div th:if="${room.images != null and room.images.size() > 1}">
+      <div class="sec-label" style="margin-top:1.5rem;"><i class="fas fa-images"></i> Gallery</div>
+      <div class="rd-gallery-grid">
+        <img th:each="img : ${room.images}"
+             th:src="@{/admin/rooms/image/{id}(id=${img.imageId})}"
+             th:alt="${room.name}"
+             th:onclick="|window.open('/admin/rooms/image/${img.imageId}','_blank')|"/>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: Booking Card -->
+  <div>
+    <div class="booking-card">
+      <div class="price-row">
+        <div class="price-big">₹<span th:text="${room.pricePerDay}">0</span></div>
+        <div class="price-per">/ night</div>
+      </div>
+      <div class="rd-price-note">Taxes & charges included</div>
+
+      <!-- Info rows -->
+      <div class="info-rows">
+        <div class="info-row">
+          <span><i class="fas fa-vector-square"></i> Room Size</span>
+          <strong th:text="${room.areaSqm != null ? room.areaSqm + ' m²' : '—'}">—</strong>
+        </div>
+        <div class="info-row">
+          <span><i class="fas fa-users"></i> Max Guests</span>
+          <strong th:text="${room.maxGuests != null ? room.maxGuests : '—'}">—</strong>
+        </div>
+        <div class="info-row">
+          <span><i class="fas fa-bed"></i> Bed Type</span>
+          <strong th:text="${room.bedType != null and room.bedType != '' ? room.bedType : '—'}">—</strong>
+        </div>
+        <div class="info-row">
+          <span><i class="fas fa-door-open"></i> Room No.</span>
+          <strong th:text="${room.roomNumber != null ? '#' + room.roomNumber : '—'}">—</strong>
+        </div>
+      </div>
+
+      <button class="btn-book-now"
+              th:if="${room.status != null and room.status.name() == 'AVAILABLE'}"
+              th:onclick="|window.location.href='/booking?roomId='+${room.roomId}|">
+        Book Now
+      </button>
+      <button class="btn-book-now" disabled
+              th:unless="${room.status != null and room.status.name() == 'AVAILABLE'}">
+        Currently Unavailable
+      </button>
+
+      <div class="cancel-note">
+        <i class="fas fa-shield-alt"></i> Free cancellation · No hidden charges
+      </div>
+
+      <!-- Trust badges -->
+      <div class="trust-row">
+        <div class="trust-item">
+          <i class="fas fa-lock"></i>
+          <span>Secure<br>Booking</span>
+        </div>
+        <div class="trust-item">
+          <i class="fas fa-headset"></i>
+          <span>24/7<br>Support</span>
+        </div>
+        <div class="trust-item">
+          <i class="fas fa-medal"></i>
+          <span>Best<br>Price</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // Carousel
+  const track  = document.getElementById('carouselTrack');
+  const dotsEl = document.getElementById('carouselDots');
+  const slides = track ? Array.from(track.children) : [];
+  let current = 0, autoTimer;
+
+  function buildDots() {
+    if (slides.length <= 1) {
+      document.querySelectorAll('.carousel-btn').forEach(b => b.style.display = 'none');
+      return;
+    }
+    slides.forEach((_, i) => {
+      const d = document.createElement('div');
+      d.className = 'dot' + (i === 0 ? ' active' : '');
+      d.onclick = () => goTo(i);
+      dotsEl.appendChild(d);
+    });
+  }
+  function goTo(n) {
+    current = (n + slides.length) % slides.length;
+    track.style.transform = `translateX(-${current * 100}%)`;
+    document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i === current));
+  }
+  function carouselMove(dir) {
+    clearInterval(autoTimer);
+    goTo(current + dir);
+    startAuto();
+  }
+  function startAuto() {
+    if (slides.length <= 1) return;
+    autoTimer = setInterval(() => goTo(current + 1), 3800);
+  }
+
+  // Touch / drag
+  let touchStartX = 0;
+  const wrap = document.getElementById('carousel');
+  if (wrap) {
+    wrap.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; }, { passive: true });
+    wrap.addEventListener('touchend', e => {
+      const diff = touchStartX - e.changedTouches[0].clientX;
+      if (Math.abs(diff) > 40) carouselMove(diff > 0 ? 1 : -1);
+    }, { passive: true });
+    let md = false, ms = 0;
+    wrap.addEventListener('mousedown', e => { md = true; ms = e.clientX; });
+    wrap.addEventListener('mouseup', e => {
+      if (!md) return; md = false;
+      const diff = ms - e.clientX;
+      if (Math.abs(diff) > 40) carouselMove(diff > 0 ? 1 : -1);
+    });
+  }
+
+  buildDots();
+  startAuto();
+
+  // Dropdown
+  function toggleDropdown(e) {
+    e.stopPropagation();
+    document.getElementById('profileDropdown').classList.toggle('show');
+  }
+  document.addEventListener('click', function() {
+    const d = document.getElementById('profileDropdown');
+    if (d) d.classList.remove('show');
+  });
+</script>
+</body>
+</html>

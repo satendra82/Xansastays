@@ -1,0 +1,948 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Room | XansaStays Admin</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+        :root {
+            --gold:        #C9A84C;
+            --gold-lt:     #dbbf6e;
+            --ink:         #1c2b1e;
+            --ink-mid:     #3d5240;
+            --ink-soft:    #3d5240;
+            --slate:       #6b7e6d;
+            --mist:        #f7f8f6;
+            --white:       #FFFFFF;
+            --emerald:     #3d5240;
+            --crimson:     #C0392B;
+            --sky:         #2980B9;
+            --parchment:   #f7f8f6;
+            --parchment-dim: #e2e6e2;
+            --card:        #FFFFFF;
+            --brass:       #C9A84C;
+            --brass-light: #dbbf6e;
+            --moss:        #3d5240;
+            --line:        #e2e6e2;
+            --text:        #1c2b1e;
+            --muted:       #6b7e6d;
+            --error:       #C0392B;
+            --success:     #3d5240;
+            --font-display: 'Playfair Display', Georgia, serif;
+            --font-body:    'Inter', system-ui, sans-serif;
+            --radius:      12px;
+            --radius-sm:   8px;
+            --shadow:      0 2px 12px rgba(26,26,46,.08);
+            --shadow-hover: 0 6px 28px rgba(26,26,46,.16);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: var(--font-body);
+            background: var(--mist);
+            color: var(--ink);
+            padding-bottom: 0;
+        }
+
+        /* ── Hero Header — hotel signage plaque ── */
+        .page-header {
+            background: var(--ink);
+            background-image:
+                    radial-gradient(ellipse at top left, rgba(169,121,60,0.14), transparent 55%),
+                    linear-gradient(180deg, var(--ink) 0%, var(--ink-soft) 100%);
+            padding: 3rem 2rem 3.6rem;
+            margin-bottom: -28px;
+            border-bottom: 3px solid var(--brass);
+            position: relative;
+        }
+        .page-header-inner {
+            max-width: 900px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            gap: 22px;
+        }
+        /* Room-key fob badge instead of a generic icon tile */
+        .page-header .icon-badge {
+            width: 58px; height: 58px;
+            background: linear-gradient(155deg, var(--brass-light), var(--brass));
+            border-radius: 50% 50% 50% 6px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.3rem; color: var(--ink);
+            flex-shrink: 0;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.35);
+            position: relative;
+        }
+        .page-header .icon-badge::after {
+            content: "";
+            position: absolute;
+            top: -9px; left: 50%;
+            width: 10px; height: 10px;
+            border-radius: 50%;
+            border: 3px solid var(--brass);
+            transform: translateX(-50%);
+            background: var(--ink-soft);
+        }
+        .page-header .breadcrumb {
+            font-family: 'Courier New', monospace;
+            font-size: 0.7rem;
+            letter-spacing: 2.5px;
+            text-transform: uppercase;
+            color: var(--brass-light);
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+        .page-header h1 {
+            font-family: var(--font-display);
+            font-weight: 500;
+            font-style: italic;
+            font-size: 2.1rem;
+            color: #f6f1e4;
+            letter-spacing: 0.2px;
+        }
+        .page-header p {
+            color: rgba(246,241,228,0.6);
+            margin-top: 5px;
+            font-size: 0.85rem;
+        }
+
+        form { max-width: 900px; margin: 0 auto; padding: 0 20px; position: relative; z-index: 2; counter-reset: stub; }
+
+        #statusMsg {
+            max-width: 900px;
+            margin: 0 auto 20px;
+            padding: 14px 18px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            display: none;
+            align-items: center;
+            gap: 10px;
+            position: relative;
+            z-index: 2;
+        }
+        #statusMsg.success { display: flex; background: #eaf1ea; color: var(--success); border: 1px solid #c3d8c5; }
+        #statusMsg.error   { display: flex; background: #f8eaea; color: var(--error);   border: 1px solid #e3c1c1; }
+
+        /* ── Section Card — styled as a reservation stub ── */
+        .section-card {
+            background: var(--white);
+            border-radius: 4px;
+            margin-bottom: 26px;
+            box-shadow: 0 10px 28px rgba(28,33,24,0.10);
+            overflow: hidden;
+            position: relative;
+            counter-increment: stub;
+            border: 1px solid #e2e6e2;
+        }
+        .section-card:first-of-type { margin-top: 24px; }
+        /* stub notches on the left/right edge, like a torn ticket */
+        .section-card::before {
+            content: "";
+            position: absolute;
+            top: 30px; left: -9px;
+            width: 18px; height: 18px;
+            border-radius: 50%;
+            background: var(--parchment);
+            border: 1px solid #e2e6e2;
+        }
+        .card-head {
+            display: flex; align-items: center; gap: 14px;
+            padding: 22px 28px;
+            border-bottom: 2px dashed var(--line);
+            position: relative;
+        }
+        .card-head::after {
+            content: "Nº " counter(stub, decimal-leading-zero);
+            position: absolute;
+            top: 22px; right: 28px;
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            letter-spacing: 1.5px;
+            color: var(--brass);
+            font-weight: 600;
+        }
+        .card-head .num-icon {
+            width: 42px; height: 42px;
+            background: var(--moss);
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1rem; color: #f0ead7;
+            flex-shrink: 0;
+        }
+        .card-head h2 {
+            font-family: var(--font-display);
+            font-weight: 500;
+            font-size: 1.2rem;
+            color: var(--text);
+        }
+        .card-head p { font-size: 0.8rem; color: var(--muted); margin-top: 2px; }
+        .card-body { padding: 26px 28px 28px; }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 18px;
+        }
+        .grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
+        .field { display: flex; flex-direction: column; gap: 7px; }
+        .field.full { grid-column: 1 / -1; }
+        label {
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+            text-transform: uppercase;
+            color: var(--muted);
+            display: flex; align-items: center; gap: 6px;
+        }
+        label i { color: var(--brass); font-size: 12px; }
+        input[type="text"],
+        input[type="number"],
+        textarea,
+        select {
+            border: 1.5px solid #e2e6e2;
+            border-radius: 6px;
+            padding: 12px 14px;
+            font-size: 14px;
+            font-family: var(--font-body);
+            background: var(--parchment-dim);
+            color: var(--text);
+            transition: border-color .15s, box-shadow .15s, background .15s;
+        }
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: var(--gold);
+            background: var(--white);
+            box-shadow: 0 0 0 4px rgba(169,121,60,0.14);
+        }
+        textarea { resize: vertical; min-height: 84px; }
+
+        /* ── Amenities ── */
+        .amenities-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+        .amenity-toggle {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border: 1.5px solid #e2e6e2;
+            border-radius: 8px;
+            padding: 12px 14px;
+            font-size: 13.5px;
+            background: var(--parchment-dim);
+            transition: border-color .15s, background .15s;
+            cursor: pointer;
+        }
+        .amenity-toggle:has(input:checked) {
+            border-color: var(--gold);
+            background: rgba(169,121,60,0.08);
+        }
+        .amenity-toggle .a-icon {
+            width: 34px; height: 34px; flex-shrink: 0;
+            background: rgba(69,89,74,0.12);
+            border-radius: 7px;
+            display: flex; align-items: center; justify-content: center;
+            color: var(--moss); font-size: 0.9rem;
+        }
+        .amenity-toggle span.label { font-weight: 600; color: var(--text); flex: 1; font-family: var(--font-body); }
+        .switch {
+            position: relative;
+            width: 40px;
+            height: 22px;
+            flex-shrink: 0;
+        }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute; cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #ded4b8;
+            border-radius: 22px;
+            transition: .2s;
+        }
+        .slider::before {
+            content: "";
+            position: absolute;
+            height: 16px; width: 16px;
+            left: 3px; bottom: 3px;
+            background-color: white;
+            border-radius: 50%;
+            transition: .2s;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+        .switch input:checked + .slider { background-color: var(--brass); }
+        .switch input:checked + .slider::before { transform: translateX(18px); }
+
+        /* ── Upload ── */
+        .upload-box {
+            border: 2px dashed var(--line);
+            border-radius: 10px;
+            padding: 34px 24px;
+            text-align: center;
+            color: var(--muted);
+            font-size: 14px;
+            cursor: pointer;
+            transition: border-color .15s, background .15s;
+            display: flex; flex-direction: column; align-items: center; gap: 10px;
+            background: var(--parchment-dim);
+        }
+        .upload-box i { font-size: 1.75rem; color: var(--brass); }
+        .upload-box strong { color: var(--text); font-size: 0.9rem; font-family: var(--font-body); }
+        .upload-box:hover, .upload-box.dragover { border-color: var(--gold); background: #f2ead6; }
+        .upload-box input { display: none; }
+        #previewGrid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 16px;
+        }
+        .preview-thumb {
+            position: relative;
+            width: 90px; height: 90px;
+        }
+        .preview-thumb img {
+            width: 100%; height: 100%;
+            object-fit: cover;
+            border-radius: 6px;
+            border: 1.5px solid #e2e6e2;
+        }
+        .preview-thumb .remove-btn {
+            position: absolute; top: -7px; right: -7px;
+            width: 22px; height: 22px;
+            background: var(--error); color: white;
+            border: 2px solid var(--card);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 11px; cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+
+        /* ── Submit Bar ── */
+        .submit-row {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            padding: 4px 0 20px;
+        }
+        .btn {
+            padding: 14px 30px;
+            border-radius: 7px;
+            font-size: 13.5px;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+            cursor: pointer;
+            border: none;
+            display: flex; align-items: center; gap: 8px;
+            font-family: var(--font-body);
+            transition: background .2s, transform .15s, box-shadow .2s;
+        }
+        .btn-primary {
+            background: var(--gold);
+            color: var(--ink);
+        }
+        .btn-primary:hover:not(:disabled) {
+            background: var(--brass-light);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 24px rgba(169,121,60,0.4);
+        }
+        .btn-primary:disabled { opacity: 0.65; cursor: not-allowed; }
+        .btn-secondary {
+            background: transparent;
+            border: 1.5px solid #e2e6e2;
+            color: var(--muted);
+        }
+        .btn-secondary:hover { background: var(--parchment-dim); border-color: var(--gold); }
+
+        @media (max-width: 640px) {
+            .grid, .grid.cols-3, .amenities-grid { grid-template-columns: 1fr; }
+            .page-header { padding: 2.25rem 1.25rem 2.75rem; }
+            .card-body { padding: 20px; }
+            .card-head::after { display: none; }
+            .section-card::before { display: none; }
+        }
+
+
+        /* ── SIDEBAR LAYOUT ── */
+        :root { --sidebar-w: 260px; }
+
+        html, body { height: 100%; }
+
+        body {
+            display: flex;
+            padding-bottom: 0;
+        }
+
+        .sidebar {
+            width: var(--sidebar-w);
+            background: #1c2b1e;
+            color: #e8e0cc;
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            top: 0; left: 0; bottom: 0;
+            z-index: 200;
+            transition: transform .3s cubic-bezier(.4,0,.2,1);
+            transform: translateX(-100%);
+            overflow-y: auto;
+        }
+        .sidebar.open { transform: translateX(0); }
+
+        @media (min-width: 769px) {
+            .sidebar { transform: translateX(0); }
+            .main-content { margin-left: var(--sidebar-w); }
+            .hamburger { display: none !important; }
+            .sidebar-overlay { display: none !important; }
+        }
+
+        .sidebar-logo {
+            padding: 24px 20px 18px;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .sidebar-logo .brand {
+            font-family: var(--font-display);
+            font-size: 1.2rem;
+            color: #c9a84c;
+            font-weight: 600;
+        }
+        .sidebar-logo .tagline {
+            font-size: 0.65rem;
+            color: rgba(232,224,204,0.5);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-top: 2px;
+        }
+        .sidebar-close {
+            background: none; border: none;
+            color: rgba(232,224,204,0.5);
+            font-size: 1.1rem; cursor: pointer;
+            padding: 8px 10px;
+            display: none;
+        }
+        @media (max-width: 768px) { .sidebar-close { display: block; } }
+
+        .nav-section { padding: 16px 0 4px; }
+        .nav-label {
+            font-size: 0.62rem;
+            color: rgba(232,224,204,0.35);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            padding: 0 18px 6px;
+        }
+        .nav-item {
+            display: flex; align-items: center; gap: 12px;
+            padding: 13px 18px;
+            color: rgba(232,224,204,0.75);
+            text-decoration: none;
+            font-size: 0.88rem;
+            border-left: 3px solid transparent;
+            transition: background .18s, color .18s;
+        }
+        .nav-item:hover, .nav-item.active {
+            background: rgba(169,121,60,0.12);
+            color: #c9a84c;
+            border-left-color: #C9A84C;
+        }
+        .nav-item .icon { font-size: 1.1rem; width: 22px; text-align: center; }
+
+        .sidebar-bottom {
+            margin-top: auto;
+            padding: 16px;
+            border-top: 1px solid rgba(255,255,255,0.06);
+        }
+        .admin-chip {
+            display: flex; align-items: center; gap: 10px;
+        }
+        .avatar {
+            width: 36px; height: 36px;
+            border-radius: 50%;
+            background: #C9A84C;
+            color: #fff;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 0.8rem;
+        }
+        .admin-info .name { font-size: 0.85rem; color: #e8e0cc; font-weight: 600; }
+        .admin-info .role { font-size: 0.7rem; color: rgba(232,224,204,0.45); }
+
+        .sidebar-overlay {
+            display: none;
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.45);
+            z-index: 199;
+        }
+        .sidebar-overlay.show { display: block; }
+
+        /* hamburger */
+        .hamburger {
+            position: fixed; top: 14px; left: 14px; z-index: 198;
+            background: #1c2b1e; border: none; border-radius: 8px;
+            color: #c9a84c; font-size: 1.3rem;
+            width: 42px; height: 42px;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+        }
+
+        /* main content wrapper */
+        .main-content {
+            flex: 1;
+            min-height: 100vh;
+            width: 100%;
+            padding-top: 0;
+        }
+
+        @media (max-width: 768px) {
+            .main-content { margin-left: 0; padding-top: 60px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Hamburger (mobile) -->
+<button class="hamburger" onclick="openSidebar()" aria-label="Open menu">☰</button>
+
+<!-- Sidebar overlay -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+<!-- SIDEBAR -->
+<nav class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+        <div>
+            <div class="brand">XansaStays</div>
+            <div class="tagline">Admin Portal</div>
+        </div>
+        <button class="sidebar-close" onclick="closeSidebar()">✕</button>
+    </div>
+
+    <div class="nav-section">
+        <div class="nav-label">Overview</div>
+        <a class="nav-item" href="/admin/dashboard"><span class="icon">🏠</span> Dashboard</a>
+    </div>
+    <div class="nav-section">
+        <div class="nav-label">Management</div>
+        <a class="nav-item" href="/admin/dashboard#rooms"><span class="icon">🛏️</span> Rooms</a>
+        <a class="nav-item" href="/admin/dashboard#all-rooms"><span class="icon">🏨</span> Room Cards</a>
+        <a class="nav-item active" href="/admin/rooms/addroom"><span class="icon">➕</span> Add Room</a>
+        <a class="nav-item" href="/admin/dashboard#bookings"><span class="icon">📋</span> Bookings</a>
+        <a class="nav-item" href="/admin/dashboard#checkout"><span class="icon">🚪</span> Checkout</a>
+        <a class="nav-item" href="/admin/dashboard#guests"><span class="icon">👤</span> Guests</a>
+        <a class="nav-item" href="/admin/dashboard#reviews"><span class="icon">⭐</span> Reviews</a>
+        <a class="nav-item" href="/admin/dashboard#coupons"><span class="icon">🎟️</span> Coupons</a>
+    </div>
+    <div class="nav-section">
+        <div class="nav-label">Account</div>
+        <a class="nav-item" href="/admin/dashboard#profile"><span class="icon">⚙️</span> Profile</a>
+    </div>
+
+    <div class="sidebar-bottom">
+        <div class="admin-chip">
+            <div class="avatar">AD</div>
+            <div class="admin-info">
+                <div class="name">Admin</div>
+                <div class="role">Super Admin</div>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<!-- MAIN CONTENT -->
+<div class="main-content">
+
+    <div class="page-header">
+        <div class="page-header-inner">
+            <div class="icon-badge"><i class="fas fa-bed"></i></div>
+            <div>
+                <div class="breadcrumb">Admin · Room Management</div>
+                <h1 id="pageTitle">Add a New Room</h1>
+                <p id="pageSubtitle">Fill in the room details and facilities below</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="statusMsg"></div>
+
+    <form id="addRoomForm">
+        <input type="hidden" name="roomId" id="roomId" value="">
+
+        <!-- ROOM BASIC INFO -->
+        <div class="section-card">
+            <div class="card-head">
+                <div class="num-icon"><i class="fas fa-clipboard-list"></i></div>
+                <div>
+                    <h2>Room Details</h2>
+                    <p>Basic information about the room</p>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="grid">
+                    <div class="field">
+                        <label><i class="fas fa-hashtag"></i> Room Number *</label>
+                        <input type="text" name="roomNumber" required placeholder="e.g. 101">
+                    </div>
+                    <div class="field">
+                        <label><i class="fas fa-signature"></i> Room Name *</label>
+                        <input type="text" name="name" required placeholder="e.g. Deluxe Suite">
+                    </div>
+                    <div class="field">
+                        <label><i class="fas fa-indian-rupee-sign"></i> Price / Day *</label>
+                        <input type="number" name="pricePerDay" step="0.01" required placeholder="e.g. 2500">
+                    </div>
+                    <div class="field">
+                        <label><i class="fas fa-user-group"></i> Max Guests</label>
+                        <input type="number" name="maxGuests" placeholder="e.g. 2">
+                    </div>
+                    <div class="field">
+                        <label><i class="fas fa-vector-square"></i> Area (sqm)</label>
+                        <input type="number" name="areaSqm" step="0.1" placeholder="e.g. 25">
+                    </div>
+                    <div class="field">
+                        <label><i class="fas fa-bed"></i> Bed Type</label>
+                        <input type="text" name="bedType" placeholder="e.g. King Size">
+                    </div>
+                    <div class="field">
+                        <label><i class="fas fa-mountain-sun"></i> View Type</label>
+                        <input type="text" name="viewType" placeholder="e.g. Garden View">
+                    </div>
+                    <div class="field">
+                        <label><i class="fas fa-circle-check"></i> Status</label>
+                        <select name="status">
+                            <option value="AVAILABLE">Available</option>
+                            <option value="BOOKED">Booked</option>
+                            <option value="UNDER_MAINTENANCE">Under Maintenance</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label><i class="fas fa-door-open"></i> Room Type</label>
+                        <select name="roomType">
+                            <option value="SINGLE">Single</option>
+                            <option value="DOUBLE">Double</option>
+                            <option value="SUITE">Suite</option>
+                            <option value="DORMITORY">Dormitory</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label><i class="fas fa-layer-group"></i> No. of Beds</label>
+                        <input type="number" name="noOfBeds" min="1" value="1">
+                    </div>
+                    <div class="field full">
+                        <label><i class="fas fa-align-left"></i> Description</label>
+                        <textarea name="description" placeholder="Write about the room..."></textarea>
+                    </div>
+                    <div class="field full">
+                        <label><i class="fas fa-tags"></i> Facilities (short tags, comma separated)</label>
+                        <input type="text" name="facilities" placeholder="e.g. AC, Mini Bar, Balcony">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- DINING & AC/NON-AC -->
+        <div class="section-card">
+            <div class="card-head">
+                <div class="num-icon"><i class="fas fa-utensils"></i></div>
+                <div>
+                    <h2>Category</h2>
+                    <p>Dining and climate options</p>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="grid cols-3">
+                    <div class="field">
+                        <label><i class="fas fa-utensils"></i> Dining</label>
+                        <select name="dining">
+                            <option value="">— None —</option>
+                            <option value="BREAKFAST">Breakfast</option>
+                            <option value="LUNCH">Lunch</option>
+                            <option value="SNACKS">Snacks</option>
+                            <option value="DINNER">Dinner</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label><i class="fas fa-snowflake"></i> AC / Non-AC</label>
+                        <select name="facilityRoomType">
+                            <option value="">— None —</option>
+                            <option value="AC">AC</option>
+                            <option value="NON_AC">Non-AC</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- AMENITIES -->
+        <div class="section-card">
+            <div class="card-head">
+                <div class="num-icon"><i class="fas fa-sparkles"></i></div>
+                <div>
+                    <h2>Amenities</h2>
+                    <p>Toggle whatever this room offers</p>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="amenities-grid">
+                    <label class="amenity-toggle">
+                        <span class="a-icon"><i class="fas fa-spa"></i></span>
+                        <span class="label">Spa</span>
+                        <span class="switch"><input type="checkbox" data-amenity="spa"><span class="slider"></span></span>
+                    </label>
+                    <label class="amenity-toggle">
+                        <span class="a-icon"><i class="fas fa-elevator"></i></span>
+                        <span class="label">Lift</span>
+                        <span class="switch"><input type="checkbox" data-amenity="lift"><span class="slider"></span></span>
+                    </label>
+                    <label class="amenity-toggle">
+                        <span class="a-icon"><i class="fas fa-kit-medical"></i></span>
+                        <span class="label">Emergency Service</span>
+                        <span class="switch"><input type="checkbox" data-amenity="emergencyService"><span class="slider"></span></span>
+                    </label>
+                    <label class="amenity-toggle">
+                        <span class="a-icon"><i class="fas fa-bell-concierge"></i></span>
+                        <span class="label">Room Service</span>
+                        <span class="switch"><input type="checkbox" data-amenity="roomService"><span class="slider"></span></span>
+                    </label>
+                    <label class="amenity-toggle">
+                        <span class="a-icon"><i class="fas fa-gamepad"></i></span>
+                        <span class="label">Game Zone</span>
+                        <span class="switch"><input type="checkbox" data-amenity="gameZone"><span class="slider"></span></span>
+                    </label>
+                    <label class="amenity-toggle">
+                        <span class="a-icon"><i class="fas fa-person-swimming"></i></span>
+                        <span class="label">Swimming Pool</span>
+                        <span class="switch"><input type="checkbox" data-amenity="swimmingPool"><span class="slider"></span></span>
+                    </label>
+                    <label class="amenity-toggle">
+                        <span class="a-icon"><i class="fas fa-wifi"></i></span>
+                        <span class="label">Wi-Fi</span>
+                        <span class="switch"><input type="checkbox" data-amenity="wifi" checked><span class="slider"></span></span>
+                    </label>
+                    <label class="amenity-toggle">
+                        <span class="a-icon"><i class="fas fa-square-parking"></i></span>
+                        <span class="label">Parking</span>
+                        <span class="switch"><input type="checkbox" data-amenity="parking"><span class="slider"></span></span>
+                    </label>
+                    <label class="amenity-toggle">
+                        <span class="a-icon"><i class="fas fa-bath"></i></span>
+                        <span class="label">Attached Bathroom</span>
+                        <span class="switch"><input type="checkbox" data-amenity="attachedBathroom" checked><span class="slider"></span></span>
+                    </label>
+                    <label class="amenity-toggle">
+                        <span class="a-icon"><i class="fas fa-shirt"></i></span>
+                        <span class="label">Laundry</span>
+                        <span class="switch"><input type="checkbox" data-amenity="laundry"><span class="slider"></span></span>
+                    </label>
+                    <label class="amenity-toggle">
+                        <span class="a-icon"><i class="fas fa-tree"></i></span>
+                        <span class="label">Garden</span>
+                        <span class="switch"><input type="checkbox" data-amenity="garden"><span class="slider"></span></span>
+                    </label>
+                    <label class="amenity-toggle">
+                        <span class="a-icon"><i class="fas fa-dumbbell"></i></span>
+                        <span class="label">Gym</span>
+                        <span class="switch"><input type="checkbox" data-amenity="gym"><span class="slider"></span></span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- IMAGES -->
+        <div class="section-card">
+            <div class="card-head">
+                <div class="num-icon"><i class="fas fa-camera"></i></div>
+                <div>
+                    <h2>Room Images</h2>
+                    <p>Upload a few photos guests will see</p>
+                </div>
+            </div>
+            <div class="card-body">
+                <label class="upload-box" id="uploadBox" for="imageInput">
+                    <i class="fas fa-cloud-arrow-up"></i>
+                    <strong>Add images by clicking or dragging and dropping.</strong>
+                    <span>Multiple images allowed · JPG, PNG</span>
+                    <input type="file" id="imageInput" accept="image/*" multiple>
+                </label>
+                <div id="previewGrid"></div>
+            </div>
+        </div>
+
+        <div class="submit-row">
+            <button type="button" class="btn btn-secondary" onclick="window.location.href='/admin/dashboard'">
+                <i class="fas fa-arrow-left"></i> Cancel
+            </button>
+            <button type="submit" class="btn btn-primary" id="submitBtn">
+                <i class="fas fa-check"></i> Save Room
+            </button>
+        </div>
+    </form>
+
+    <script>
+        // ── Manage selected images ourselves so we can show remove buttons ──
+        const imageInput  = document.getElementById('imageInput');
+        const uploadBox   = document.getElementById('uploadBox');
+        const previewGrid = document.getElementById('previewGrid');
+        let selectedFiles = [];
+
+        function renderPreviews() {
+            previewGrid.innerHTML = '';
+            selectedFiles.forEach((file, idx) => {
+                const reader = new FileReader();
+                reader.onload = e => {
+                    const thumb = document.createElement('div');
+                    thumb.className = 'preview-thumb';
+                    thumb.innerHTML = `<img src="${e.target.result}"><span class="remove-btn" data-idx="${idx}"><i class="fas fa-xmark"></i></span>`;
+                    thumb.querySelector('.remove-btn').addEventListener('click', (ev) => {
+                        ev.preventDefault();
+                        selectedFiles.splice(idx, 1);
+                        renderPreviews();
+                    });
+                    previewGrid.appendChild(thumb);
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        imageInput.addEventListener('change', () => {
+            selectedFiles = selectedFiles.concat(Array.from(imageInput.files));
+            imageInput.value = '';
+            renderPreviews();
+        });
+
+        // Drag & drop polish
+        ['dragover', 'dragleave', 'drop'].forEach(evt => {
+            uploadBox.addEventListener(evt, (e) => {
+                e.preventDefault();
+                if (evt === 'dragover') uploadBox.classList.add('dragover');
+                else uploadBox.classList.remove('dragover');
+                if (evt === 'drop' && e.dataTransfer.files.length) {
+                    selectedFiles = selectedFiles.concat(Array.from(e.dataTransfer.files));
+                    renderPreviews();
+                }
+            });
+        });
+
+        // ── Form submit ──
+        const form      = document.getElementById('addRoomForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const statusMsg = document.getElementById('statusMsg');
+        const roomIdInput = document.getElementById('roomId');
+
+        // ── Edit mode: agar URL me ?edit=<id> hai to existing room load karo ──
+        const params = new URLSearchParams(window.location.search);
+        const editId = params.get('edit');
+
+        if (editId) {
+            document.getElementById('pageTitle').textContent = 'Edit Room';
+            document.getElementById('pageSubtitle').textContent = 'Update Rooms Details';
+            submitBtn.innerHTML = '<i class="fas fa-check"></i> Update Room';
+            roomIdInput.value = editId;
+
+            (async () => {
+                try {
+                    const res = await fetch('/admin/rooms/' + editId);
+                    if (!res.ok) throw new Error('Room not load ');
+                    const r = await res.json();
+
+                    form.roomNumber.value  = r.roomNumber  || '';
+                    form.name.value        = r.name        || '';
+                    form.pricePerDay.value = r.pricePerDay  ?? '';
+                    form.maxGuests.value   = r.maxGuests    ?? '';
+                    form.areaSqm.value     = r.areaSqm      ?? '';
+                    form.bedType.value     = r.bedType      || '';
+                    form.viewType.value    = r.viewType     || '';
+                    form.description.value = r.description  || '';
+                    form.facilities.value  = r.facilities   || '';
+                    if (r.status)   form.status.value   = r.status;
+                    if (r.roomType) form.roomType.value = r.roomType;
+
+                    if (r.facility) {
+                        form.noOfBeds.value = r.facility.noOfBeds ?? 1;
+                        if (r.facility.dining)           form.dining.value = r.facility.dining;
+                        if (r.facility.facilityRoomType) form.facilityRoomType.value = r.facility.facilityRoomType;
+
+                        document.querySelectorAll('[data-amenity]').forEach(input => {
+                            const key = input.getAttribute('data-amenity');
+                            input.checked = r.facility[key] === 'Yes';
+                        });
+                    }
+
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                } catch (err) {
+                    statusMsg.className = 'error';
+                    statusMsg.innerHTML = '<i class="fas fa-circle-exclamation"></i> Room not loading : ' + err.message;
+                }
+            })();
+        }
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            statusMsg.className = '';
+            statusMsg.textContent = '';
+
+            const formData = new FormData(form);
+
+            // Amenity toggles ko Yes/No string ke roop mein FormData mein daalo
+            document.querySelectorAll('[data-amenity]').forEach(input => {
+                formData.append(input.getAttribute('data-amenity'), input.checked ? 'Yes' : 'No');
+            });
+
+            // Manually managed images
+            selectedFiles.forEach(file => formData.append('images', file));
+
+            const isEdit = !!roomIdInput.value;
+            const endpoint = isEdit ? '/admin/rooms/update' : '/admin/rooms/save';
+
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ' + (isEdit ? 'Updating...' : 'Saving...');
+
+            try {
+                const res = await fetch(endpoint, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!res.ok) throw new Error('Server error: ' + res.status);
+
+                const data = await res.json();
+                if (data.success) {
+                    statusMsg.className = 'success';
+                    statusMsg.innerHTML = isEdit
+                        ? '<i class="fas fa-circle-check"></i> Room successfully update !'
+                        : '<i class="fas fa-circle-check"></i> Room successfully added! (Room ID: ' + data.roomId + ')';
+                    if (!isEdit) {
+                        form.reset();
+                        selectedFiles = [];
+                        previewGrid.innerHTML = '';
+                    }
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                } else {
+                    throw new Error(isEdit ? 'Update failed' : 'Save failed');
+                }
+            } catch (err) {
+                statusMsg.className = 'error';
+                statusMsg.innerHTML = '<i class="fas fa-circle-exclamation"></i> ' + (isEdit ? 'Room not update : ' : 'Room not save : ') + err.message;
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = isEdit ? '<i class="fas fa-check"></i> Update Room' : '<i class="fas fa-check"></i> Save Room';
+            }
+        });
+    </script>
+
+
+</div><!-- /main-content -->
+
+<script>
+    function openSidebar() {
+        document.getElementById('sidebar').classList.add('open');
+        document.getElementById('sidebarOverlay').classList.add('show');
+    }
+    function closeSidebar() {
+        document.getElementById('sidebar').classList.remove('open');
+        document.getElementById('sidebarOverlay').classList.remove('show');
+    }
+</script>
+</body>
+</html>

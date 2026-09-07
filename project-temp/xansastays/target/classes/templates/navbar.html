@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<body>
+
+<nav th:fragment="navbar">
+
+    <style>
+        .profile-dropdown a i {
+            width: 20px;
+            text-align: center;
+            margin-right: 6px;
+            font-size: 15px;
+        }
+        .profile-dropdown a[href="/profile"] i { color: #6b5ce0; }
+        .profile-dropdown a[href="/mybookings"] i { color: #d99a3f; }
+        .profile-dropdown a[href="/favourites"] i { color: #e0455f; }
+        .profile-dropdown a.logout-link i { color: #d9622b; }
+    </style>
+
+    <a href="/Homepage" class="logo">
+        <img src="/images/xansastay8k.png" alt="Xansa Stay Logo" style="height: 50px; width: auto; object-fit: contain;">
+    </a>
+    <div class="nav-links">
+        <a href="/Homepage"
+           th:classappend="${activePage == 'home'} ? ' active' : ''">Home</a>
+        <a href="/rooms"
+           th:classappend="${activePage == 'rooms'} ? ' active' : ''">Rooms</a>
+        <a href="/Homepage#services"
+           th:classappend="${activePage == 'Services'} ? ' active' : ''">Services</a>
+        <a href="/gallery"
+           th:classappend="${activePage == 'gallery'} ? ' active' : ''">Gallery</a>
+        <a href="/contact"
+           th:classappend="${activePage == 'contact'} ? ' active' : ''">Contact</a>
+        <a sec:authorize="hasRole('ADMIN')" href="/admin/dashboard"
+           th:classappend="${activePage == 'dashboard'} ? ' active' : ''">Dashboard</a>
+    </div>
+    <div class="nav-right">
+
+        <!-- Unauthenticated users -->
+        <div sec:authorize="!isAuthenticated()">
+            <a href="/signup">Sign Up</a>
+            <button class="btn-login" onclick="window.location.href='/login'">LOGIN</button>
+        </div>
+
+        <!-- Authenticated users — Profile Dropdown -->
+        <div sec:authorize="isAuthenticated()" class="profile-dropdown-wrapper">
+            <div class="profile-trigger" onclick="toggleDropdown(event)">
+                <div class="profile-info">
+                    <span class="profile-name" th:text="${guestName != null ? guestName : 'User'}">User</span>
+                    <span class="profile-role" sec:authorize="hasRole('ADMIN')">Admin</span>
+                    <span class="profile-role" sec:authorize="hasRole('GUEST')">Guest</span>
+                </div>
+                <img th:if="${guestProfilePic != null and !guestProfilePic.isEmpty()}"
+                     th:src="${guestProfilePic}" class="profile-avatar"
+                     style="object-fit:cover;" alt="Profile">
+                <div th:unless="${guestProfilePic != null and !guestProfilePic.isEmpty()}"
+                     class="profile-avatar" th:text="${guestInitial != null ? guestInitial : 'U'}">U</div>
+                <span style="font-size:10px; color:#888;">&#9660;</span>
+            </div>
+
+            <!-- Dropdown Menu -->
+            <div class="profile-dropdown" id="profileDropdown">
+                <div class="dropdown-header">
+                    <img th:if="${guestProfilePic != null and !guestProfilePic.isEmpty()}"
+                         th:src="${guestProfilePic}" class="profile-avatar large"
+                         style="object-fit:cover;" alt="Profile">
+                    <div th:unless="${guestProfilePic != null and !guestProfilePic.isEmpty()}"
+                         class="profile-avatar large" th:text="${guestInitial != null ? guestInitial : 'U'}">U</div>
+                    <div>
+                        <div class="dh-name" th:text="${guestName != null ? guestName : 'User'}">User</div>
+                        <div class="dh-email" th:text="${guestEmail != null ? guestEmail : ''}">email</div>
+                    </div>
+                </div>
+                <a href="/profile"><i class="fa-solid fa-user"></i> My Profile</a>
+                <a href="/mybookings"><i class="fa-solid fa-calendar-check"></i> My Bookings</a>
+                <a href="/favourites"><i class="fa-solid fa-heart"></i> Favourites</a>
+                <hr style="margin:0; border-color:#eee;">
+                <a href="/logout" class="logout-link"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+            </div>
+        </div>
+
+    </div>
+
+    <script th:inline="javascript">
+        function toggleDropdown(event) {
+            event.stopPropagation();
+            const dropdown = document.getElementById('profileDropdown');
+            if (dropdown) dropdown.classList.toggle('show');
+        }
+
+        window.addEventListener('click', function (e) {
+            if (!e.target.closest('.profile-dropdown-wrapper')) {
+                const d = document.getElementById('profileDropdown');
+                if (d) d.classList.remove('show');
+            }
+        });
+    </script>
+</nav>
+
+</body>
+</html>

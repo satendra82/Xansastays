@@ -1,0 +1,1060 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book Room – Xansa Stay</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <link rel="stylesheet" href="/css/home.css">
+    <style>
+        /* ══════════════════════════════════════
+           BOOKING PAGE STYLES
+        ══════════════════════════════════════ */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background: #eef1ee;
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+        }
+
+        /* ── Page Header ── */
+        .page-header {
+            background: var(--clr-brand, #3d5240);
+            padding: calc(84px + 2.5rem) 5rem 2.5rem;
+        }
+        .page-header .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.8125rem;
+            color: rgba(255,255,255,0.55);
+            margin-bottom: 1rem;
+        }
+        .page-header .breadcrumb a { color: rgba(255,255,255,0.7); text-decoration: none; }
+        .page-header .breadcrumb a:hover { color: white; }
+        .page-header .breadcrumb span { color: rgba(255,255,255,0.35); }
+        .page-header h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(1.75rem, 3vw, 2.5rem);
+            color: white;
+        }
+        .page-header p {
+            color: rgba(255,255,255,0.6);
+            font-size: 0.9375rem;
+            margin-top: 0.375rem;
+        }
+
+        /* ── Main Layout ── */
+        .booking-layout {
+            max-width: 1180px;
+            margin: 0 auto;
+            padding: 2.5rem 2rem 5rem;
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 2rem;
+            align-items: start;
+        }
+
+        /* ── Cards ── */
+        .card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid #eef1ee;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .card-header .icon {
+            width: 40px; height: 40px;
+            background: rgba(61,82,64,0.1);
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.1rem;
+            color: #3d5240;
+            flex-shrink: 0;
+        }
+        .card-header h3 {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #1c2b1e;
+        }
+        .card-header p {
+            font-size: 0.8rem;
+            color: #6b7e6d;
+            margin-top: 1px;
+        }
+        .card-body { padding: 2rem; }
+
+        /* ── Form ── */
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-bottom: 1.125rem;
+        }
+        .form-group:last-child { margin-bottom: 0; }
+
+        label {
+            font-size: 0.8125rem;
+            font-weight: 600;
+            color: #1c2b1e;
+        }
+        label .req { color: #e24b4a; margin-left: 2px; }
+
+        input[type="text"],
+        input[type="email"],
+        input[type="tel"],
+        input[type="date"],
+        input[type="time"],
+        select,
+        textarea {
+            padding: 11px 14px;
+            border: 1.5px solid #e2e6e2;
+            border-radius: 10px;
+            font-size: 0.875rem;
+            font-family: 'Inter', sans-serif;
+            color: #1c2b1e;
+            background: white;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            outline: none;
+            width: 100%;
+        }
+        input:focus, select:focus, textarea:focus {
+            border-color: #3d5240;
+            box-shadow: 0 0 0 3px rgba(61,82,64,0.1);
+        }
+        input[readonly] {
+            background: #f7f8f6;
+            color: #6b7e6d;
+            cursor: not-allowed;
+        }
+        textarea { resize: vertical; min-height: 90px; }
+
+        .field-hint {
+            font-size: 0.75rem;
+            color: #9aaa9c;
+            margin-top: 2px;
+        }
+
+        .section-divider {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 1.75rem 0 1.25rem;
+        }
+        .section-divider span {
+            font-size: 0.6875rem;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: #3d5240;
+            white-space: nowrap;
+        }
+        .section-divider::before,
+        .section-divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: #e2e6e2;
+        }
+
+        /* Submit Button */
+        .btn-submit {
+            width: 100%;
+            padding: 16px;
+            margin-top: 1.75rem;
+            background: #3d5240;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 700;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .btn-submit:hover {
+            background: #4a6350;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(61,82,64,0.35);
+        }
+        .btn-submit:active { transform: translateY(0); }
+
+        /* Error Banner */
+        .error-banner {
+            background: #fff0f0;
+            border: 1px solid #fca5a5;
+            color: #b91c1c;
+            padding: 12px 16px;
+            border-radius: 10px;
+            font-size: 0.875rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* ── Summary Card (Right) ── */
+        .summary-card { position: sticky; top: calc(84px + 1.5rem); }
+
+        .room-preview {
+            height: 220px;
+            overflow: hidden;
+            position: relative;
+        }
+        .room-preview img { width: 100%; height: 100%; object-fit: cover; }
+        .room-preview .room-badge {
+            position: absolute;
+            top: 14px; left: 14px;
+            background: rgba(255,255,255,0.95);
+            color: #1c2b1e;
+            padding: 4px 12px;
+            border-radius: 50px;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+
+        .summary-body { padding: 1.5rem; }
+
+        .summary-room-name {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #1c2b1e;
+            margin-bottom: 4px;
+        }
+        .summary-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 1.25rem;
+        }
+        .tag {
+            padding: 3px 10px;
+            border-radius: 50px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            background: rgba(61,82,64,0.08);
+            color: #3d5240;
+        }
+
+        .date-boxes {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+            margin-bottom: 1.25rem;
+        }
+        .date-box {
+            background: #f7f8f6;
+            border-radius: 10px;
+            padding: 0.75rem 1rem;
+        }
+        .date-box .lbl {
+            font-size: 0.625rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            color: #9aaa9c;
+            margin-bottom: 3px;
+        }
+        .date-box .val {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: #1c2b1e;
+        }
+
+        .price-breakdown { margin-top: 1rem; }
+        .price-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.875rem;
+            color: #6b7e6d;
+            padding: 6px 0;
+        }
+        .price-row.total {
+            font-size: 1rem;
+            font-weight: 800;
+            color: #1c2b1e;
+            padding-top: 12px;
+            margin-top: 6px;
+            border-top: 2px solid #e2e6e2;
+        }
+        .price-row.total .amount {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.5rem;
+            color: #3d5240;
+        }
+
+        .perks {
+            margin-top: 1.25rem;
+            padding: 1rem;
+            background: #f0f7f2;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .perk {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.8125rem;
+            color: #3d5240;
+            font-weight: 500;
+        }
+        .perk i { font-size: 0.75rem; }
+
+        /* Loading spinner on submit */
+        .spinner {
+            display: none;
+            width: 18px; height: 18px;
+            border: 2px solid rgba(255,255,255,0.4);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Login Required Banner */
+        .login-required {
+            background: #fffbeb;
+            border: 1px solid #f59e0b;
+            color: #92400e;
+            padding: 14px 18px;
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+            font-size: 0.875rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .login-required a {
+            color: #3d5240;
+            font-weight: 700;
+            text-decoration: underline;
+        }
+        .facility-btn::after{
+            content: "";
+            position: absolute;
+            left: 50%;
+            bottom: 0;
+            transform: translateX(-50%);
+            width: 0;
+            height: 4px;
+            background: #3d5240;
+            border-radius: 10px;
+            transition: width .3s ease;
+        }
+
+        /* Hover */
+        .facility-btn:hover::after{
+            width: 80%;
+        }
+
+        /* Active */
+        .facility-btn.active::after{
+            content: "";
+            width: 100%;
+            background: #c9a84c;
+        }
+        .facility-btn{
+            position:relative;
+            display:flex;
+            flex-direction:row;
+            align-items:center;
+            justify-content:center;
+            gap:8px;
+            width:100%;
+            height:51px;
+            padding:0 20px;
+            border:2px solid #e8ece8;
+            border-radius:690px;
+            background:#fff;
+            cursor:pointer;
+            transition:.3s;
+            font-family:'Inter',sans-serif;
+        }
+
+        .facility-btn i{
+            font-size:20px;
+            color:#3d5240;
+            transition:.3s;
+        }
+
+        .facility-btn .title{
+            font-size:12px;
+            font-weight:600;
+            color:#1c2b1e;
+            text-align:center;
+            white-space:nowrap;
+        }
+
+        .facility-btn span{
+            background:#f2f2f2;
+            padding:3px 12px;
+            border-radius:30px;
+            font-size:12px;
+            font-weight:700;
+            color:#556b5d;
+        }
+
+        .facility-btn:hover{
+            transform:translateY(-3px);
+            box-shadow:0 8px 20px rgba(0,0,0,.15);
+        }
+
+        .facility-btn.active{
+            background:#3d5240;
+        }
+
+        .facility-btn.active i,
+        .facility-btn.active .title,
+        .facility-btn.active span{
+            color:#fff;
+        }
+
+        .facility-btn.active span{
+            background:rgba(255,255,255,.2);
+        }
+        .facility-btn-grid{
+            display:grid;
+            grid-template-columns:repeat(3, 1fr);
+            gap:12px;
+        }
+
+        /* ── Coupon Chips ── */
+        .coupon-chip {
+            cursor: pointer;
+            padding: 6px 14px;
+            background: #eef1ee;
+            border: 1.5px dashed #3d5240;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #3d5240;
+            transition: background 0.2s, border-color 0.2s, transform 0.15s, box-shadow 0.2s;
+            display: inline-block;
+        }
+        .coupon-chip:hover {
+            background: #d4e4d6;
+            border-color: #2a3d2c;
+            transform: translateY(-1px);
+            box-shadow: 0 3px 10px rgba(61,82,64,0.18);
+        }
+        .coupon-chip-active {
+            background: #3d5240 !important;
+            border: 1.5px solid #3d5240 !important;
+            color: white !important;
+            box-shadow: 0 4px 12px rgba(61,82,64,0.35) !important;
+        }
+        .coupon-chip-active:hover {
+            background: #4a6350 !important;
+        }
+    </style>
+</head>
+<body>
+
+<!-- ══ NAVBAR ══ -->
+<nav th:replace="~{navbar :: navbar}"></nav>
+
+<!-- ══ PAGE HEADER ══ -->
+<div class="page-header">
+    <div class="breadcrumb">
+        <a href="/home">Home</a>
+        <span>›</span>
+        <a href="/rooms">Rooms</a>
+        <span>›</span>
+        <span style="color:rgba(255,255,255,0.8);" th:text="${room.name}">Book Room</span>
+    </div>
+    <h1>Complete Your Booking</h1>
+    <p>Fill in your details and confirm your reservation</p>
+</div>
+
+<!-- ══ MAIN LAYOUT ══ -->
+<div class="booking-layout">
+
+    <!-- ══ LEFT: FORM CARD ══ -->
+    <div>
+
+        <!-- Error Banner -->
+        <div class="error-banner" th:if="${error}">
+            <i class="fas fa-exclamation-circle"></i>
+            <span th:text="${error}">Error</span>
+        </div>
+
+        <!-- Login Required (not authenticated) -->
+        <div class="login-required" sec:authorize="!isAuthenticated()">
+            <i class="fas fa-lock"></i>
+            <span>Booking ke liye <a href="/login">login karo</a> ya <a href="/signup">account banao</a>.</span>
+        </div>
+
+        <!-- STAY DETAILS -->
+        <div class="card" style="margin-bottom:1.5rem;">
+            <div class="card-header">
+                <div class="icon"><i class="fas fa-calendar-alt"></i></div>
+                <div>
+                    <h3>Stay Details</h3>
+                    <p>Check-in / check-out aur guests</p>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Check-in Date <span class="req">*</span></label>
+                        <input type="date" id="checkInDate" name="checkInDate_display"
+                               th:value="${checkInDate}" onchange="recalculate()">
+                    </div>
+                    <div class="form-group">
+                        <label>Check-out Date <span class="req">*</span></label>
+                        <input type="date" id="checkOutDate" name="checkOutDate_display"
+                               th:value="${checkOutDate}" onchange="recalculate()">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Check-in Time <span class="req">*</span></label>
+                        <input type="time" id="checkInTime" name="checkInTime_display"
+                               th:value="${checkInTime}" onchange="recalculate()">
+                        <span class="field-hint">Checkout will happen automatically after 24 hours at this same time.</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Number of Guests <span class="req">*</span></label>
+                    <select id="guestSelect" name="guestSelect_display">
+                        <option th:each="i : ${#numbers.sequence(1, room.maxGuests != null ? room.maxGuests : 4)}"
+                                th:value="${i}"
+                                th:text="${i} + ' Guest(s)'"
+                                th:selected="${i == 1}">
+                        </option>
+                    </select>
+                    <span class="field-hint">Max <span th:text="${room.maxGuests}">4</span> guests allowed</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- GUEST INFO -->
+        <div class="card" style="margin-bottom:1.5rem;">
+            <div class="card-header">
+                <div class="icon"><i class="fas fa-user"></i></div>
+                <div>
+                    <h3>Guest Information</h3>
+                    <p>Auto-filled from your account</p>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="form-group">
+                    <label>Full Name</label>
+                    <input type="text" th:value="${guestName}" readonly placeholder="Name">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" th:value="${guestEmail}" readonly placeholder="Email">
+                    </div>
+                    <div class="form-group">
+                        <label>Phone</label>
+                        <input type="tel" th:value="${guestPhone}" readonly placeholder="Phone">
+                    </div>
+                </div>
+                <span class="field-hint"><i class="fas fa-info-circle"></i>Update it from your profile if you want to make a change</span>
+            </div>
+        </div>
+        <div class="card-body">
+            <div><h5>Special Requerd</h5></div>
+            <div class="facility-btn-grid">
+                <button class="facility-btn" data-id="1" data-price="500" onclick="toggleFacility(this)">
+                    <i class="fas fa-utensils"></i>
+                    <div class="title">Dining</div>
+                    <span>₹500</span>
+                </button>
+                <button class="facility-btn" data-id="2" data-price="1500" onclick="toggleFacility(this)">
+                    <i class="fas fa-spa"></i>
+                    <div class="title">Spa</div>
+                    <span>₹1500</span>
+                </button>
+                <button class="facility-btn" data-id="3" data-price="300" onclick="toggleFacility(this)">
+                    <i class="fas fa-truck-medical"></i>
+                    <div class="title">Emergency</div>
+                    <span>₹300</span>
+                </button>
+                <button class="facility-btn" data-id="4" data-price="400" onclick="toggleFacility(this)">
+                    <i class="fas fa-concierge-bell"></i>
+                    <div class="title">Room Service</div>
+                    <span>₹400</span>
+                </button>
+                <button class="facility-btn" data-id="5" data-price="700" onclick="toggleFacility(this)">
+                    <i class="fas fa-gamepad"></i>
+                    <div class="title">Game Zone</div>
+                    <span>₹700</span>
+                </button>
+                <button class="facility-btn" data-id="6" data-price="800" onclick="toggleFacility(this)">
+                    <i class="fas fa-person-swimming"></i>
+                    <div class="title">Swimming Pool</div>
+                    <span>₹800</span>
+                </button>
+                <button class="facility-btn" data-id="7" data-price="200" onclick="toggleFacility(this)">
+                    <i class="fas fa-wifi"></i>
+                    <div class="title">WiFi</div>
+                    <span>₹200</span>
+                </button>
+                <button class="facility-btn" data-id="8" data-price="300" onclick="toggleFacility(this)">
+                    <i class="fas fa-square-parking"></i>
+                    <div class="title">Parking</div>
+                    <span>₹300</span>
+                </button>
+                <button class="facility-btn" data-id="9" data-price="500" onclick="toggleFacility(this)">
+                    <i class="fas fa-bath"></i>
+                    <div class="title">Bathroom</div>
+                    <span>₹500</span>
+                </button>
+                <button class="facility-btn" data-id="10" data-price="400" onclick="toggleFacility(this)">
+                    <i class="fas fa-shirt"></i>
+                    <div class="title">Laundry</div>
+                    <span>₹400</span>
+                </button>
+                <button class="facility-btn" data-id="11" data-price="300" onclick="toggleFacility(this)">
+                    <i class="fas fa-dumbbell"></i>
+                    <div class="title">Gym</div>
+                    <span>₹300</span>
+                </button>
+            </div>
+        </div>
+        <form id="bookingForm" th:action="@{/booking}" method="post" style="display:none;">
+            <input type="hidden" name="roomId"          th:value="${room.roomId}">
+            <input type="hidden" name="checkInDate"     id="formCheckin">
+            <input type="hidden" name="checkInTime"     id="formCheckinTime">
+            <input type="hidden" name="checkOutDate"    id="formCheckout">
+            <input type="hidden" name="guests"          id="formGuests">
+            <input type="hidden" name="specialRequests" id="formSpecial">
+            <input type="hidden" name="totalAmount"     id="formTotal">
+            <input type="hidden" name="couponCode"      id="formCoupon">
+            <input type="hidden"
+                   id="formAmenities"
+                   name="amenitiesIds">
+        </form>
+
+        <button class="btn-submit" onclick="submitBooking()" sec:authorize="isAuthenticated()">
+            <span id="btnText"><i class="fas fa-check-circle"></i> &nbsp;Confirm Booking</span>
+            <div class="spinner" id="btnSpinner"></div>
+        </button>
+        <button class="btn-submit" style="opacity:0.5;cursor:not-allowed;" sec:authorize="!isAuthenticated()" disabled>
+            <i class="fas fa-lock"></i> &nbsp; Login Karo to Book
+        </button>
+
+    </div>
+    <div class="summary-card card">
+        <div class="room-preview" style="position:relative; overflow:hidden;">
+            <div th:if="${room.images != null and !room.images.empty}">
+                <div th:each="img, iStat : ${room.images}"
+                     class="slide"
+                     th:id="'slide-' + ${iStat.index}"
+                     th:style="${iStat.index == 0} ? 'display:block;' : 'display:none;'">
+                    <img th:src="@{/admin/rooms/image/{id}(id=${img.imageId})}"
+                         th:alt="${room.name}"
+                         style="width:100%; height:260px; object-fit:cover; display:block;">
+                </div>
+            </div>
+
+            <!-- Fallback -->
+            <div th:unless="${room.images != null and !room.images.empty}">
+                <img src="/images/room-deluxe.jpg" alt="Room"
+                     style="width:100%; height:260px; object-fit:cover; display:block;">
+            </div>
+
+            <!-- Controls — sirf 2+ images pe -->
+            <div th:if="${room.images != null and room.images.size() > 1}">
+                <button onclick="slideImg(-1)" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);background:rgba(0,0,0,0.45);color:white;border:none;width:34px;height:34px;border-radius:50%;font-size:18px;cursor:pointer;z-index:10;">&#8249;</button>
+                <button onclick="slideImg(1)"  style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:rgba(0,0,0,0.45);color:white;border:none;width:34px;height:34px;border-radius:50%;font-size:18px;cursor:pointer;z-index:10;">&#8250;</button>
+
+                <!-- Dots -->
+                <div style="position:absolute;bottom:10px;left:50%;transform:translateX(-50%);display:flex;gap:6px;z-index:10;">
+                    <span th:each="img, iStat : ${room.images}"
+                          th:id="'dot-' + ${iStat.index}"
+                          th:onclick="'goToSlide(' + ${iStat.index} + ')'"
+                          style="width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,0.5);cursor:pointer;transition:background 0.2s;"
+                          th:style="${iStat.index == 0} ? 'width:8px;height:8px;border-radius:50%;background:white;cursor:pointer;' : 'width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,0.45);cursor:pointer;'">
+                    </span>
+                </div>
+                <div style="position:absolute;top:10px;right:10px;background:rgba(0,0,0,0.5);color:white;font-size:12px;padding:3px 9px;border-radius:99px;z-index:10;">
+                    <span id="slideCounter">1</span> / <span th:text="${room.images.size()}">1</span>
+                </div>
+            </div>
+
+            <span class="room-badge" th:text="${room.status != null and room.status.name() == 'AVAILABLE'} ? 'Available' : 'Booked'"
+                  style="position:absolute;top:12px;left:12px;"></span>
+        </div>
+
+        <div class="summary-body">
+            <div class="summary-room-name" th:text="${room.name}">Room Name</div>
+            <div class="summary-tags">
+                <span class="tag" th:text="${room.roomType}">Type</span>
+                <span class="tag" th:if="${room.bedType}" th:text="${room.bedType}">Bed</span>
+                <span class="tag" th:if="${room.areaSqm}" th:text="${room.areaSqm} + ' m²'">Area</span>
+                <span class="tag" th:if="${room.maxGuests}" th:text="'Max ' + ${room.maxGuests} + ' guests'">Guests</span>
+            </div>
+
+            <div class="date-boxes">
+                <div class="date-box">
+                    <div class="lbl">Check-in</div>
+                    <div class="val" id="summaryCheckin" th:text="${checkInDate}">-</div>
+                </div>
+                <div class="date-box">
+                    <div class="lbl">Check-out</div>
+                    <div class="val" id="summaryCheckout" th:text="${checkOutDate}">-</div>
+                </div>
+            </div>
+
+
+            <div id="availableCoupons" style="margin-bottom:10px;display:flex;flex-wrap:wrap;gap:6px;"></div>
+
+            <div class="coupon-box" style="margin-bottom:14px;padding:14px;background:#f7f8f6;border-radius:10px;">
+                <div style="display:flex;gap:8px;">
+                    <input type="text" id="couponInput" placeholder="Enter coupon code"
+                           style="flex:1;padding:9px 12px;border:1.5px solid #e2e6e2;border-radius:8px;font-size:0.8125rem;text-transform:uppercase;outline:none;">
+                    <button type="button" id="couponBtn" onclick="applyCoupon()"
+                            style="padding:9px 16px;background:#3d5240;color:white;border:none;border-radius:8px;font-size:0.8125rem;font-weight:600;cursor:pointer;white-space:nowrap;">Apply</button>
+                </div>
+                <div id="couponMsg" style="font-size:0.75rem;margin-top:6px;"></div>
+            </div>
+
+            <div class="price-breakdown">
+                <div class="price-row">
+                    <span>Price per night</span>
+                    <span>₹<span th:text="${#numbers.formatInteger(room.pricePerDay, 1, 'COMMA')}">0</span></span>
+                </div>
+                <div class="price-row">
+                    <span id="nightsLabel">1 Night</span>
+                    <span id="nightsAmt">₹0</span>
+                </div>
+                <div class="price-row">
+                    <span>Special Requests / Facilities</span>
+                    <span id="facilityAmt">₹0</span>
+                </div>
+                <div class="price-row">
+                    <span>Taxes & Fees</span>
+                    <span>Included</span>
+                </div>
+                <div class="price-row" id="discountRow" style="display:none;color:#2F6B3E;font-weight:600;">
+                    <span>Coupon Discount (<span id="discountCode"></span>)</span>
+                    <span id="discountAmt">-₹0</span>
+                </div>
+                <div class="price-row total">
+                    <span>Total</span>
+                    <span class="amount" id="totalDisplay">₹0</span>
+                </div>
+
+                <div style="margin-top:14px;padding:14px;background:#f0f7f2;border-radius:10px;">
+                    <div class="price-row" style="color:#2F6B3E;font-weight:700;">
+                        <span>Advance Payable Now (30%)</span>
+                        <span id="advanceAmt">₹0</span>
+                    </div>
+                    <div class="price-row" style="color:#6b7e6d;">
+                        <span>Balance Due at Check-in (70%)</span>
+                        <span id="balanceAmt">₹0</span>
+                    </div>
+                </div>
+            </div>
+            <div class="perks">
+                <div class="perk"><i class="fas fa-check"></i> Free cancellation before check-in</div>
+                <div class="perk"><i class="fas fa-check"></i> Complimentary breakfast included</div>
+                <div class="perk"><i class="fas fa-check"></i> 24/7 guest support</div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- ══ SCRIPTS ══ -->
+<script th:inline="javascript">
+    const PRICE_PER_NIGHT = /*[[${room.pricePerDay}]]*/ 0;
+
+    let appliedDiscount    = 0;
+    let appliedCouponCode  = null;
+
+    function recalculate() {
+        const checkin  = document.getElementById('checkInDate').value;
+        const checkout = document.getElementById('checkOutDate').value;
+
+        if (!checkin || !checkout) return;
+
+        const d1 = new Date(checkin);
+        const d2 = new Date(checkout);
+        let nights = Math.round((d2 - d1) / (1000 * 60 * 60 * 24));
+        if (nights < 1) {
+            const fix = new Date(d1);
+            fix.setDate(fix.getDate() + 1);
+            document.getElementById('checkOutDate').value = fix.toISOString().split('T')[0];
+            nights = 1;
+        }
+
+        const roomAmount   = parseFloat(PRICE_PER_NIGHT * nights);
+        const originalTotal = roomAmount + facilityTotal;
+        const finalTotal     = Math.max(0, originalTotal - appliedDiscount);
+
+        // ── Advance/Balance ab discount ke baad wale (final) total pe ──
+        const advance = Math.round(finalTotal * 0.30 * 100) / 100;
+        const balance = Math.round((finalTotal - advance) * 100) / 100;
+
+        document.getElementById('nightsLabel').textContent   = nights + ' Night' + (nights > 1 ? 's' : '');
+        document.getElementById('nightsAmt').textContent     = '₹' + roomAmount.toLocaleString('en-IN');
+        document.getElementById('facilityAmt').textContent   = '₹' + facilityTotal.toLocaleString('en-IN');
+
+        if (appliedDiscount > 0) {
+            document.getElementById('discountRow').style.display = 'flex';
+            document.getElementById('discountCode').textContent  = appliedCouponCode;
+            document.getElementById('discountAmt').textContent   = '-₹' + appliedDiscount.toLocaleString('en-IN');
+        } else {
+            document.getElementById('discountRow').style.display = 'none';
+        }
+
+        document.getElementById('totalDisplay').textContent  = '₹' + finalTotal.toLocaleString('en-IN');
+        document.getElementById('advanceAmt').textContent    = '₹' + advance.toLocaleString('en-IN');
+        document.getElementById('balanceAmt').textContent    = '₹' + balance.toLocaleString('en-IN');
+        document.getElementById('summaryCheckin').textContent  = formatDate(checkin);
+        document.getElementById('summaryCheckout').textContent = formatDate(checkout);
+    }
+
+    // ── Available Coupons dikhana (room ke price ke hisab se) ──
+    function loadAvailableCoupons() {
+        const roomId = /*[[${room.roomId}]]*/ 0;
+        fetch('/coupon/available?roomId=' + roomId)
+            .then(res => res.json())
+            .then(list => {
+                const container = document.getElementById('availableCoupons');
+                container.innerHTML = '';
+                if (!list || list.length === 0) return;
+
+                const heading = document.createElement('div');
+                heading.textContent = 'Available coupons for this room:';
+                heading.style.cssText = 'width:100%;font-size:0.75rem;font-weight:600;color:#6b7e6d;margin-bottom:2px;';
+                container.appendChild(heading);
+
+                list.forEach(c => {
+                    const chip = document.createElement('span');
+                    chip.textContent = c.code + ' · ' + c.label;
+                    chip.dataset.code = c.code;
+                    chip.className = 'coupon-chip';
+                    chip.onclick = function () {
+                        // Sirf input fill karo, apply button dabane pe apply hoga
+                        document.getElementById('couponInput').value = c.code;
+                        document.getElementById('couponInput').focus();
+                    };
+                    container.appendChild(chip);
+                });
+            })
+            .catch(() => {});
+    }
+
+    // ── Coupon Apply ──
+    function applyCoupon() {
+        const code = document.getElementById('couponInput').value.trim();
+        const msgEl = document.getElementById('couponMsg');
+
+        if (!code) {
+            msgEl.style.color = '#b91c1c';
+            msgEl.textContent = 'Please coupon code enter!';
+            return;
+        }
+
+        const checkin  = document.getElementById('checkInDate').value;
+        const checkout = document.getElementById('checkOutDate').value;
+        const d1 = new Date(checkin);
+        const d2 = new Date(checkout);
+        let nights = Math.round((d2 - d1) / (1000 * 60 * 60 * 24));
+        if (nights < 1) nights = 1;
+
+        const originalTotal = parseFloat(PRICE_PER_NIGHT * nights) + facilityTotal;
+
+        const btn = document.getElementById('couponBtn');
+        btn.disabled = true;
+        btn.textContent = 'Checking...';
+
+        const params = new URLSearchParams();
+        params.append('code', code);
+        params.append('roomId', /*[[${room.roomId}]]*/ '0');
+        params.append('totalAmount', originalTotal);
+
+        fetch('/coupon/apply', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: params.toString()
+        })
+            .then(res => res.json())
+            .then(data => {
+                btn.disabled = false;
+                btn.textContent = 'Apply';
+
+                if (data.success) {
+                    appliedDiscount   = data.discountAmount;
+                    appliedCouponCode = data.couponCode;
+                    document.getElementById('formCoupon').value = appliedCouponCode;
+                    msgEl.style.color = '#2F6B3E';
+                    msgEl.textContent = '✓ ' + data.message;
+                    // Applied chip highlight karo
+                    document.querySelectorAll('.coupon-chip').forEach(ch => {
+                        ch.classList.remove('coupon-chip-active');
+                        if (ch.dataset.code === appliedCouponCode) {
+                            ch.classList.add('coupon-chip-active');
+                        }
+                    });
+                } else {
+                    appliedDiscount   = 0;
+                    appliedCouponCode = null;
+                    document.getElementById('formCoupon').value = '';
+                    msgEl.style.color = '#b91c1c';
+                    msgEl.textContent = data.message;
+                    // Sab chips se active class hatao
+                    document.querySelectorAll('.coupon-chip').forEach(ch => ch.classList.remove('coupon-chip-active'));
+                }
+                recalculate();
+            })
+            .catch(() => {
+                btn.disabled = false;
+                btn.textContent = 'Apply';
+                msgEl.style.color = '#b91c1c';
+                msgEl.textContent = 'Something went wrong; try again.';
+            });
+    }
+
+    function formatDate(d) {
+        if (!d) return '-';
+        const dt = new Date(d);
+        return dt.toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
+    }
+
+    // ── Submit Booking ──
+    function submitBooking() {
+        const checkin     = document.getElementById('checkInDate').value;
+        const checkinTime = document.getElementById('checkInTime').value;
+        const checkout    = document.getElementById('checkOutDate').value;
+        const guests      = document.getElementById('guestSelect').value;
+
+        if (!checkin || !checkout) {
+            alert('Please select check-in and check-out dates!');
+            return;
+        }
+        if (!checkinTime) {
+            alert('Please select check-in time!');
+            return;
+        }
+
+        // Fill hidden form
+        document.getElementById('formCheckin').value      = checkin;
+        document.getElementById('formCheckinTime').value  = checkinTime;
+        document.getElementById('formCheckout').value     = checkout;
+        document.getElementById('formGuests').value       = guests;
+
+
+        // Total amount calculate karke set karo
+        const d1 = new Date(checkin);
+        const d2 = new Date(checkout);
+        let nights = Math.round((d2 - d1) / (1000 * 60 * 60 * 24));
+        if (nights < 1) nights = 1;
+        document.getElementById('formTotal').value = parseFloat(PRICE_PER_NIGHT * nights)+ facilityTotal;;
+
+        // Show spinner
+        document.getElementById('btnText').style.display    = 'none';
+        document.getElementById('btnSpinner').style.display = 'block';
+
+        document.getElementById('bookingForm').submit();
+    }
+
+    // ── Image Slider ──
+    let currentSlide = 0;
+    const slides = document.querySelectorAll('.slide');
+    const totalSlides = slides.length;
+
+    function goToSlide(n) {
+        if (totalSlides === 0) return;
+        slides[currentSlide].style.display = 'none';
+        const oldDot = document.getElementById('dot-' + currentSlide);
+        if (oldDot) oldDot.style.background = 'rgba(255,255,255,0.45)';
+
+        currentSlide = (n + totalSlides) % totalSlides;
+        slides[currentSlide].style.display = 'block';
+        const newDot = document.getElementById('dot-' + currentSlide);
+        if (newDot) newDot.style.background = 'white';
+
+        const counter = document.getElementById('slideCounter');
+        if (counter) counter.textContent = currentSlide + 1;
+    }
+
+    function slideImg(dir) {
+        goToSlide(currentSlide + dir);
+    }
+
+    // ── Set date minimums & init ──
+    document.addEventListener('DOMContentLoaded', function () {
+        const todayDate = new Date();
+        const today = todayDate.toISOString().split('T')[0];
+
+        document.getElementById('checkInDate').min  = today;
+        document.getElementById('checkOutDate').min = today;
+
+        const checkInEl     = document.getElementById('checkInDate');
+        const checkOutEl    = document.getElementById('checkOutDate');
+        const checkInTimeEl = document.getElementById('checkInTime');
+
+        // Agar backend se dates nahi aayi (fields khaali hain), to default aaj/kal set karo
+        if (!checkInEl.value) {
+            checkInEl.value = today;
+        }
+        if (!checkOutEl.value) {
+            const tomorrow = new Date(todayDate);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            checkOutEl.value = tomorrow.toISOString().split('T')[0];
+        }
+        // Default check-in time — standard hotel check-in 2:00 PM
+        if (!checkInTimeEl.value) {
+            checkInTimeEl.value = '14:00';
+        }
+
+        recalculate();
+        loadAvailableCoupons();
+    });
+    let selectedFacilities = [];
+    let facilityTotal = 0;
+
+    function toggleFacility(btn){
+
+        const id = btn.dataset.id;
+        const price = Number(btn.dataset.price);
+
+        if(btn.classList.contains("active")){
+            btn.classList.remove("active");
+            selectedFacilities =
+                selectedFacilities.filter(x => x != id);
+
+            facilityTotal -= price;
+        }else{
+            btn.classList.add("active");
+            selectedFacilities.push(id);
+            facilityTotal += price;
+        }
+        // document.getElementById("formAmenities").value =
+        //     selectedFacilities.map(f => f.id).join(",");
+        document.getElementById("formAmenities").value =
+            selectedFacilities.join(",");
+
+        recalculate();
+    }
+
+</script>
+</body>
+</html>

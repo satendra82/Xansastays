@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>All Rooms – Xansa Stay</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="stylesheet" href="/css/home.css">
+    <style>
+        /* ── Page Header ── */
+        .rooms-page-header {
+            background: linear-gradient(135deg, #1a2e1c 0%, #3d5240 60%, #2a3d2c 100%);
+            padding: 120px 5% 60px;
+            text-align: center;
+            color: white;
+        }
+        .rooms-page-header .eyebrow {
+            display: inline-block;
+            font-size: 11px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: var(--clr-gold, #c9a84c);
+            border: 1px solid var(--clr-gold, #c9a84c);
+            padding: 4px 16px;
+            border-radius: 20px;
+            margin-bottom: 16px;
+        }
+        .rooms-page-header h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(2rem, 5vw, 3.2rem);
+            font-weight: 600;
+            margin: 0 0 12px;
+        }
+        .rooms-page-header p {
+            color: rgba(255,255,255,0.7);
+            font-size: 16px;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        /* ── Filter Bar ── */
+        .filter-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 28px 5%;
+            flex-wrap: wrap;
+            background: #fff;
+            border-bottom: 1px solid #f0f0f0;
+            position: sticky;
+            top: 0;
+            z-index: 99;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        .filter-label {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #888;
+            margin-right: 4px;
+        }
+        .filter-pill {
+            padding: 8px 20px;
+            border-radius: 100px;
+            border: 1.5px solid #e0e0e0;
+            background: white;
+            font-size: 13px;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #444;
+        }
+        .filter-pill:hover {
+            border-color: #3d5240;
+            color: #3d5240;
+        }
+        .filter-pill.active {
+            background: #3d5240;
+            border-color: #3d5240;
+            color: white;
+            font-weight: 500;
+        }
+        .filter-count {
+            margin-left: auto;
+            font-size: 13px;
+            color: #888;
+        }
+
+        /* ── Rooms Grid (reuses home.css .rooms-grid & .room-card) ── */
+        .all-rooms-section {
+            padding: 40px 5% 80px;
+            background: #f8f7f4;
+            min-height: 60vh;
+        }
+        .all-rooms-section .rooms-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 28px;
+        }
+
+        /* ── No Result ── */
+        .no-result {
+            display: none;
+            text-align: center;
+            padding: 60px 20px;
+            color: #888;
+            grid-column: 1 / -1;
+            font-size: 15px;
+        }
+        .no-result span { font-size: 40px; display: block; margin-bottom: 12px; }
+
+        /* ── Heart Button ── */
+        .heart-btn {
+            position: absolute;
+            top: 10px; right: 10px;
+            width: 36px; height: 36px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.92);
+            backdrop-filter: blur(4px);
+            border: none; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px; z-index: 10;
+            transition: transform 0.2s;
+            box-shadow: 0 2px 8px rgba(0,0,0,.18);
+        }
+        .heart-btn:hover { transform: scale(1.2); }
+        .heart-btn.fav-active { background: #fff0f0; }
+        .room-img { position: relative !important; }
+
+        /* ── Location / Map Section ── */
+        .map-section {
+            padding: 70px 5% 80px;
+            background: #fff;
+            text-align: center;
+        }
+        .map-section .eyebrow {
+            display: inline-block;
+            font-size: 11px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: #c9a84c;
+            border: 1px solid #c9a84c;
+            padding: 4px 16px;
+            border-radius: 20px;
+            margin-bottom: 16px;
+        }
+        .map-section h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(1.6rem, 4vw, 2.4rem);
+            font-weight: 600;
+            color: #1a2e1c;
+            margin: 0 0 10px;
+        }
+        .map-section p.map-sub {
+            color: #777;
+            font-size: 15px;
+            max-width: 480px;
+            margin: 0 auto 36px;
+        }
+        .map-wrapper {
+            max-width: 1100px;
+            margin: 0 auto;
+            border-radius: 14px;
+            overflow: hidden;
+            box-shadow: 0 12px 40px rgba(26,46,28,0.18);
+            border: 1px solid #eee;
+        }
+        .map-wrapper iframe {
+            width: 100%;
+            height: 420px;
+            border: 0;
+            display: block;
+        }
+        .map-address-bar {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 22px;
+            font-size: 14px;
+            color: #444;
+        }
+        .map-address-bar a {
+            color: #3d5240;
+            font-weight: 600;
+            text-decoration: none;
+            border-bottom: 1px solid #c9a84c;
+        }
+        .map-address-bar a:hover { color: #c9a84c; }
+    </style>
+</head>
+<body>
+
+<!-- ======= NAVBAR (same as home) ======= -->
+<nav th:replace="~{navbar :: navbar}"></nav>
+
+<!-- ======= PAGE HEADER ======= -->
+<div class="rooms-page-header">
+    <div class="eyebrow">Our Collection</div>
+    <h1>All Rooms & Suites</h1>
+    <p>Choose from our curated selection of luxury rooms crafted for every kind of stay.</p>
+</div>
+
+<!-- ======= FILTER BAR ======= -->
+<div class="filter-bar">
+    <span class="filter-label">Filter:</span>
+    <button class="filter-pill active" data-filter="ALL" onclick="filterRooms(this)">All</button>
+    <button class="filter-pill" data-filter="SINGLE" onclick="filterRooms(this)">Single</button>
+    <button class="filter-pill" data-filter="DOUBLE" onclick="filterRooms(this)">Double</button>
+    <button class="filter-pill" data-filter="SUITE" onclick="filterRooms(this)">Suite</button>
+    <button class="filter-pill" data-filter="DORMITORY" onclick="filterRooms(this)">Dormitory</button>
+    <button class="filter-pill" data-filter="AVAILABLE" onclick="filterRooms(this)">Available Only</button>
+    <span class="filter-count" id="filterCount"></span>
+</div>
+
+<!-- ======= ALL ROOMS GRID ======= -->
+<section class="all-rooms-section">
+    <div class="rooms-grid" id="roomsGrid">
+
+        <div th:each="room : ${rooms}"
+             class="room-card"
+             th:attr="data-roomtype=${room.roomType},data-status=${room.status}">
+
+            <div class="room-img r1">
+                <img th:if="${room.images != null and !room.images.empty}"
+                     th:src="@{/admin/rooms/image/{id}(id=${room.images[0].imageId})}"
+                     th:alt="${room.name}">
+                <img th:unless="${room.images != null and !room.images.empty}"
+                     src="/images/room-deluxe.jpg" alt="Room">
+                <span class="room-tag"
+                      th:text="${room.status != null and room.status.name() == 'AVAILABLE'} ? 'Available' : 'Booked'">
+                </span>
+                <button class="heart-btn"
+                        th:attr="data-roomid=${room.roomId}"
+                        onclick="toggleFav(event, this)"
+                        title="Add to favorites">🤍</button>
+            </div>
+
+            <div class="room-body">
+                <div class="room-name" th:text="${room.name}">Room Name</div>
+                <div class="room-features">
+                    <span class="feat" th:if="${room.areaSqm != null}" th:text="${room.areaSqm} + ' m²'"></span>
+                    <span class="feat" th:if="${room.maxGuests != null}" th:text="${room.maxGuests} + ' Guests'"></span>
+                    <span class="feat" th:if="${room.roomNumber != null}" th:text="'No ' + ${room.roomNumber}"></span>
+                </div>
+                <div class="room-footer">
+                    <div>
+                        <div class="room-price">
+                            ₹<span th:text="${#numbers.formatInteger(room.pricePerDay, 1, 'COMMA')}">0</span>
+                            <span>/ night</span>
+                        </div>
+                        <div class="price-note">Taxes included</div>
+                    </div>
+                    <button class="btn-book"
+                            th:attr="data-roomid=${room.roomId}"
+                            onclick="viewRoom(this)">View</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="no-result" id="noResult">
+            <span>😔</span>
+            No room found for this filter.
+        </div>
+
+    </div>
+</section>
+
+<!-- ======= LOCATION / MAP SECTION ======= -->
+<section class="map-section">
+    <div class="eyebrow">Find Us</div>
+    <h2>Our Location</h2>
+    <p class="map-sub">Located in the heart of Bhopal, Xansa Stay is easy to reach and close to the city's best spots.</p>
+    <div class="map-wrapper">
+        <iframe
+                src="https://www.google.com/maps?q=Bhopal,Madhya%20Pradesh,India&output=embed"
+                allowfullscreen="" loading="lazy"
+                referrerpolicy="no-referrer-when-downgrade">
+        </iframe>
+    </div>
+    <div class="map-address-bar">
+        <span>📍 Bhopal, MP, India</span>
+        <span>|</span>
+        <a href="https://www.google.com/maps/dir/?api=1&destination=Bhopal,Madhya+Pradesh,India" target="_blank" rel="noopener">Get Directions</a>
+    </div>
+</section>
+
+<!-- ======= FOOTER ======= -->
+<footer>
+    <div class="footer-top">
+        <div class="footer-brand">
+            <div class="footer-logo">
+                <img src="/images/xansastaylogo2.png" alt="Xansa Stay Logo">
+            </div>
+            <p>Experience luxury, comfort, and world-class hospitality. Your dream stay begins here at Xansa.</p>
+        </div>
+        <div class="footer-col">
+            <h4>Hotel</h4>
+            <a href="#">About Xansa</a>
+            <a href="#">Our Story</a>
+            <a href="#">Awards</a>
+            <a href="#">Careers</a>
+        </div>
+        <div class="footer-col">
+            <h4>Services</h4>
+            <a href="#">Rooms & Suites</a>
+            <a href="#">Dining</a>
+            <a href="#">Spa</a>
+            <a href="#">Events</a>
+        </div>
+        <div class="footer-col">
+            <h4>Contact</h4>
+            <a href="#">+91 98765 43210</a>
+            <a href="#">hello@xansa.com</a>
+            <a href="#">Bhopal, MP, India</a>
+            <a href="#">Support & FAQ</a>
+        </div>
+    </div>
+    <div class="footer-bottom">
+        <p>© 2025 <span>Xansa Stay</span>. All rights reserved.</p>
+        <p>Crafted with care for luxury seekers</p>
+    </div>
+</footer>
+
+<!-- ======= SCRIPTS ======= -->
+<script>
+    // Profile Dropdown
+    function toggleDropdown(event) {
+        event.stopPropagation();
+        const d = document.getElementById('profileDropdown');
+        if (d) d.classList.toggle('show');
+    }
+    window.addEventListener('click', function(e) {
+        if (!e.target.closest('.profile-dropdown-wrapper')) {
+            const d = document.getElementById('profileDropdown');
+            if (d) d.classList.remove('show');
+        }
+    });
+
+    // Room detail redirect
+    function viewRoom(btn) {
+        const roomId = btn.getAttribute('data-roomid');
+        if (roomId) window.location.href = '/room/' + roomId;
+    }
+
+    // Filter pills
+    function filterRooms(btn) {
+        // Active pill update
+        document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+
+        const filter = btn.getAttribute('data-filter');
+        const cards = document.querySelectorAll('#roomsGrid .room-card');
+        let visible = 0;
+
+        cards.forEach(card => {
+            const type   = card.getAttribute('data-roomtype');
+            const status = card.getAttribute('data-status');
+
+            let show = false;
+            if (filter === 'ALL')                       show = true;
+            else if (filter === 'AVAILABLE')            show = status === 'AVAILABLE';
+            else                                        show = type === filter;
+
+            card.style.display = show ? 'block' : 'none';
+            if (show) visible++;
+        });
+
+        // Count update
+        document.getElementById('filterCount').textContent =
+            visible + ' room' + (visible !== 1 ? 's' : '') + ' found';
+
+        // No result
+        document.getElementById('noResult').style.display = visible === 0 ? 'block' : 'none';
+    }
+
+    // On load — show total count
+    window.addEventListener('DOMContentLoaded', function() {
+        const total = document.querySelectorAll('#roomsGrid .room-card').length;
+        document.getElementById('filterCount').textContent =
+            total + ' room' + (total !== 1 ? 's' : '') + ' found';
+    });
+
+    // ── Favourite Toggle ──
+    async function toggleFav(event, btn) {
+        event.stopPropagation();
+        const roomId = btn.getAttribute('data-roomid');
+        try {
+            const res  = await fetch('/api/favourites/toggle/' + roomId, { method: 'POST' });
+            const data = await res.json();
+            if (res.status === 401) {
+                alert('Favourite ke liye pehle login karein!');
+                window.location.href = '/login';
+                return;
+            }
+            if (data.success) {
+                btn.textContent = data.favourited ? '❤️' : '🤍';
+                btn.classList.toggle('fav-active', data.favourited);
+            }
+        } catch(e) { console.error(e); }
+    }
+
+    // ── Page load pe favourite status check ──
+    async function checkFavourites() {
+        const btns = document.querySelectorAll('.heart-btn');
+        for (const btn of btns) {
+            const roomId = btn.getAttribute('data-roomid');
+            try {
+                const res  = await fetch('/api/favourites/check/' + roomId);
+                const data = await res.json();
+                if (data.favourited) {
+                    btn.textContent = '❤️';
+                    btn.classList.add('fav-active');
+                }
+            } catch(e) {}
+        }
+    }
+    document.addEventListener('DOMContentLoaded', checkFavourites);
+
+</script>
+</body>
+</html>

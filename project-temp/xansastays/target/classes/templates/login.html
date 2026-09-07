@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xansa Stay — Login</title>
+    <link rel="stylesheet" th:href="@{/css/auth.css}">
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <style>
+        .auth-divider {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 18px 0;
+        }
+        .auth-divider::before,
+        .auth-divider::after {
+            content: "";
+            flex: 1;
+            height: 1px;
+            background: #e2e2e2;
+        }
+        .auth-divider span {
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            color: #999;
+        }
+
+        .btn-google {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+            padding: 13px 16px;
+            background: #ffffff;
+            border: 1.5px solid #e0e0e0;
+            border-radius: 8px;
+            color: #3c4043;
+            font-weight: 600;
+            font-size: 15px;
+            text-decoration: none;
+            box-sizing: border-box;
+            transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
+        }
+        .btn-google:hover {
+            background: #f8f8f8;
+            border-color: #c9c9c9;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+            color: #3c4043;
+        }
+        .btn-google svg {
+            flex-shrink: 0;
+        }
+    </style>
+</head>
+<body>
+
+<!-- ======= FLASH DATA (hidden — read by JS below) ======= -->
+<div th:if="${success}"         id="flashSuccess"         style="display:none;"></div>
+<div th:if="${invalid}"         id="flashInvalid"         style="display:none;"></div>
+<div th:if="${accountDeleted}"  id="flashAccountDeleted"  style="display:none;"></div>
+
+<div class="page-wrapper">
+
+    <div class="img-panel">
+        <img src="/images/room.png" alt="Xansa Stay Luxury">
+
+        <div class="img-overlay">
+
+            <div class="img-brand">
+                <div class="img-brand-dot"></div>
+                <div class="img-brand-name">Xansa Stay</div>
+            </div>
+
+            <div class="img-hero">
+                <div class="img-eyebrow">Luxury Hotel Experience</div>
+                <h1 class="img-headline">
+                    Your Perfect<br><em>Escape</em> Awaits
+                </h1>
+                <p class="img-tagline">
+                    World-class hospitality, elegant rooms,
+                    and unforgettable moments crafted just for you.
+                </p>
+
+                <div class="img-stats">
+
+                    <div class="img-stat">
+                        <strong id="years">15+</strong>
+                        <span>Years of Service</span>
+                    </div>
+
+                    <div class="img-stat">
+                        <strong id="guests">50K+</strong>
+                        <span>Happy Guests</span>
+                    </div>
+
+                    <div class="img-stat">
+                        <strong id="rating">4.9★</strong>
+                        <span>Avg Rating</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="form-col">
+
+
+        <div class="form-topbar">
+            <div class="topbar-brand">
+                <div class="topbar-dot"></div>
+                Xansa Stay
+            </div>
+            <a href="/signup" class="topbar-link">
+                New here? <strong>Create account →</strong>
+            </a>
+        </div>
+
+        <div class="form-scroll">
+            <div class="auth-card">
+
+                <div class="form-heading">
+                    <div class="form-eyebrow">Members Area</div>
+                    <h2>Welcome Back</h2>
+                    <p>Login to continue your luxury experience</p>
+                </div>
+
+
+                <form action="/login/save" method="post" id="loginForm">
+
+                    <div class="form-group">
+                        <label for="email">Email Address</label>
+                        <input
+                                type="email"
+                                id="email"
+                                name="email"
+                                class="form-control"
+                                placeholder="your@email.com"
+                        >
+                        <span class="field-error" id="emailError">Please enter a valid email address.</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input
+                                type="password"
+                                id="password"
+                                name="password"
+                                class="form-control"
+                                placeholder="Enter your password"
+                        >
+                        <span class="field-error" id="passwordError">Password must be at least 6 characters.</span>
+                    </div>
+
+                    <div class="form-extras">
+                        <label class="remember-me">
+                            <input type="checkbox" name="rememberMe">
+                            Remember me
+                        </label>
+                        <a href="/forgot-password" class="forgot-link">Forgot Password?</a>
+                    </div>
+
+                    <button type="submit" class="btn-auth">Login to Xansa</button>
+
+                    <div class="auth-divider">
+                        <span>OR</span>
+                    </div>
+
+                    <a href="/oauth2/authorization/google" class="btn-google">
+                        <svg width="20" height="20" viewBox="0 0 24 24">
+                            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                        </svg>
+                        Continue with Google
+                    </a>
+
+                    <div class="bottom-link">
+                        Don't have an account? <a href="/signup">Sign up free</a>
+                    </div>
+
+                </form>
+
+            </div>
+        </div>
+
+        <div class="form-footer">
+            © 2025 <span>Xansa Stay</span>. All rights reserved.
+        </div>
+
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    /* ─────────────────────────────────────────────────────────────
+       SweetAlert2 — Xansa Stay themed mixin (matches profile.html)
+       ───────────────────────────────────────────────────────────── */
+    const xansaSwal = Swal.mixin({
+        customClass: { confirmButton: 'swal-btn-confirm' },
+        buttonsStyling: false,
+        fontFamily:     'Inter, sans-serif',
+    });
+
+    document.addEventListener('DOMContentLoaded', function () {
+
+        /* 1. Registration successful */
+        if (document.getElementById('flashSuccess')) {
+            xansaSwal.fire({
+                icon:              'success',
+                title:             'Account Created!',
+                text:              'Registration successful — please log in to continue.',
+                confirmButtonText: 'Got it',
+            });
+        }
+
+        /* 2. Wrong email / password */
+        if (document.getElementById('flashInvalid')) {
+            xansaSwal.fire({
+                icon:              'error',
+                title:             'Login Failed',
+                text:              'Invalid email or password. Please try again.',
+                confirmButtonText: 'Try Again',
+            });
+        }
+
+        /* 3. Account deleted/deactivated — kept intentionally generic */
+        if (document.getElementById('flashAccountDeleted')) {
+            xansaSwal.fire({
+                icon:              'error',
+                title:             'Account Not Found',
+                text:              "We couldn't find an account with these details. Please sign up again or contact support if you think this is a mistake.",
+                confirmButtonText: 'OK',
+            });
+        }
+
+    });
+</script>
+
+
+<script>
+    (function () {
+        const form     = document.getElementById('loginForm');
+        const emailEl  = document.getElementById('email');
+        const passEl   = document.getElementById('password');
+        const emailErr = document.getElementById('emailError');
+        const passErr  = document.getElementById('passwordError');
+
+        const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+        function showError(input, errEl) {
+            input.classList.add('is-invalid');
+            errEl.classList.add('visible');
+        }
+
+        function clearError(input, errEl) {
+            input.classList.remove('is-invalid');
+            errEl.classList.remove('visible');
+        }
+
+        /* Live feedback */
+        emailEl.addEventListener('input', function () {
+            EMAIL_RE.test(this.value.trim())
+                ? clearError(this, emailErr)
+                : showError(this, emailErr);
+        });
+
+        passEl.addEventListener('input', function () {
+            this.value.length >= 6
+                ? clearError(this, passErr)
+                : showError(this, passErr);
+        });
+
+        /* On submit */
+        form.addEventListener('submit', function (e) {
+            let valid = true;
+
+            if (!EMAIL_RE.test(emailEl.value.trim())) {
+                showError(emailEl, emailErr);
+                valid = false;
+            }
+
+            if (passEl.value.length < 6) {
+                showError(passEl, passErr);
+                valid = false;
+            }
+
+            if (!valid) e.preventDefault();
+        });
+    })();
+    function animateValue(id, start, end, duration, suffix = "", decimals = 0) {
+
+        let obj = document.getElementById(id);
+
+        let range = end - start;
+
+        let current = start;
+
+        let increment = range / (duration / 20);
+
+        let timer = setInterval(function () {
+
+            current += increment;
+
+            if (current >= end) {
+                current = end;
+                clearInterval(timer);
+            }
+
+            obj.textContent = current.toFixed(decimals) + suffix;
+
+        }, 20);
+    }
+
+    window.addEventListener("load", function () {
+
+        animateValue("years", 0, 15, 1200, "+");
+
+        animateValue("guests", 0, 50, 1800, "K+");
+
+        animateValue("rating", 0, 4.9, 1500, "★", 1);
+
+    });
+</script>
+
+</body>
+</html>

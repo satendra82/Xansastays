@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+    <title>Xansa Stay — Sign Up</title>
+    <link rel="stylesheet"
+          th:href="@{/css/auth.css}">
+</head>
+<body>
+<div class="page-wrapper">
+    <!-- LEFT IMAGE -->
+    <div class="img-panel">
+        <img src="/images/room.png"
+             alt="Xansa Stay Luxury">
+        <div class="img-overlay">
+            <div class="img-brand">
+                <div class="img-brand-dot"></div>
+                <div class="img-brand-name">
+                    Xansa Stay
+                </div>
+            </div>
+            <div class="img-hero">
+                <div class="img-eyebrow">
+                    Begin Your Journey
+                </div>
+                <h1 class="img-headline">
+                    Join the<br>
+                    <em>Xansa</em> Family
+                </h1>
+                <p class="img-tagline">
+                    Unlock exclusive offers,
+                    luxury stays,
+                    and unforgettable experiences —
+                    all in one place.
+                </p>
+                <div class="img-stats">
+
+                    <div class="img-stat">
+                        <strong id="years">15+</strong>
+                        <span>Years of Service</span>
+                    </div>
+
+                    <div class="img-stat">
+                        <strong id="guests">50K+</strong>
+                        <span>Happy Guests</span>
+                    </div>
+
+                    <div class="img-stat">
+                        <strong id="rating">4.9★</strong>
+                        <span>Avg Rating</span>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- RIGHT FORM -->
+
+    <div class="form-col">
+
+        <div class="form-topbar">
+
+            <div class="topbar-brand">
+
+                <div class="topbar-dot"></div>
+
+                Xansa Stay
+
+            </div>
+
+            <a href="/login"
+               class="topbar-link">
+
+                Already a member?
+
+                <strong>Login →</strong>
+
+            </a>
+
+        </div>
+
+        <div class="form-scroll">
+
+            <div class="auth-card">
+
+                <div class="form-heading">
+
+                    <div class="form-eyebrow">
+
+                        Join Us
+
+                    </div>
+
+                    <h2>
+
+                        Create Account
+
+                    </h2>
+
+                    <p>
+
+                        Fill in your details to begin your luxury journey
+
+                    </p>
+
+                </div>
+
+                <form id="signupForm"
+                      method="post"
+                      th:action="@{/send-otp}"
+                      th:object="${guest}"
+                      novalidate>
+
+                    <div class="fields-grid">
+
+                        <div class="form-group">
+
+                            <label>
+
+                                Full Name
+
+                            </label>
+
+                            <input type="text"
+                                   id="su-name"
+                                   th:field="*{name}"
+                                   class="form-control"
+                                   placeholder="Your name">
+
+                            <span class="field-error"
+                                  id="nameError">
+
+                                Name must be at least 2 characters.
+
+                            </span>
+
+                        </div>
+
+                        <div class="form-group">
+
+                            <label>
+
+                                Email
+
+                            </label>
+
+                            <input type="email"
+                                   id="su-email"
+                                   th:field="*{email}"
+                                   class="form-control"
+                                   placeholder="your@email.com">
+
+                            <span class="field-error"
+                                  id="emailError">
+
+                                Enter a valid email.
+
+                            </span>
+
+                            <span class="server-error"
+                                  th:if="${emailError}"
+                                  th:text="${emailError}"></span>
+
+                        </div>
+
+                        <div class="form-group">
+
+                            <label>
+
+                                Password
+
+                            </label>
+
+                            <div class="input-password-wrap" style="position:relative;">
+                                <input type="password"
+                                       id="su-password"
+                                       th:field="*{password}"
+                                       class="form-control"
+                                       placeholder="Minimum 6 characters"
+                                       style="padding-right:2.8rem;">
+                                <button type="button"
+                                        class="btn-eye"
+                                        onclick="togglePassword('su-password', this)"
+                                        style="position:absolute;right:0.75rem;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:1.1rem;color:#6b7e6d;"
+                                        title="Show/Hide Password">👁️</button>
+                            </div>
+
+                            <span class="field-error"
+                                  id="passwordError">
+
+                                Password must be at least 6 characters.
+
+                            </span>
+
+                        </div>
+                        <div class="form-group">
+
+                            <label>
+
+                                Confirm Password
+
+                            </label>
+
+                            <div class="input-password-wrap" style="position:relative;">
+                                <input type="password"
+                                       id="su-confirm"
+                                       name="confirmPassword"
+                                       class="form-control"
+                                       placeholder="Re-enter password"
+                                       style="padding-right:2.8rem;">
+                                <button type="button"
+                                        class="btn-eye"
+                                        onclick="togglePassword('su-confirm', this)"
+                                        style="position:absolute;right:0.75rem;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:1.1rem;color:#6b7e6d;"
+                                        title="Show/Hide Password">👁️</button>
+                            </div>
+
+                            <span class="field-error"
+                                  id="confirmError">
+
+                                Passwords do not match.
+
+                            </span>
+
+                            <span class="server-error"
+                                  th:if="${confirmPassword}"
+                                  th:text="${confirmPassword}"></span>
+
+                        </div>
+
+                        <div class="form-group">
+
+                            <label>
+
+                                Contact
+
+                            </label>
+
+                            <div style="display:flex;align-items:center;gap:0.5rem;">
+                                <span style="
+                                    display:inline-flex;align-items:center;
+                                    background:#f0f4f0;border:1px solid #d1d9d2;
+                                    border-radius:6px;padding:0 0.75rem;
+                                    height:100%;font-size:0.95rem;font-weight:600;
+                                    color:#3d5240;white-space:nowrap;line-height:2.6;">
+                                    🇮🇳 +91
+                                </span>
+                                <input type="text"
+                                       id="su-contact"
+                                       th:field="*{contact}"
+                                       class="form-control"
+                                       placeholder="10-digit mobile number"
+                                       maxlength="10"
+                                       style="flex:1;">
+                            </div>
+
+                            <span class="field-error"
+                                  id="contactError">
+
+                                Enter a valid 10-digit mobile number.
+
+                            </span>
+
+                        </div>
+
+                        <div class="form-group">
+
+                            <label>
+
+                                Address
+
+                            </label>
+
+                            <input type="text"
+                                   id="su-address"
+                                   th:field="*{address}"
+                                   class="form-control"
+                                   placeholder="Street / Locality">
+
+                        </div>
+
+                        <!-- STATE -->
+
+                        <div class="form-group">
+
+                            <label>
+
+                                State
+
+                            </label>
+
+                            <select id="su-state"
+                                    th:field="*{state}"
+                                    class="form-control">
+
+                                <option value="">Select State</option>
+
+                                <option value="Andhra Pradesh">Andhra Pradesh</option>
+                                <option value="Arunachal Pradesh">Arunachal Pradesh</option>
+                                <option value="Assam">Assam</option>
+                                <option value="Bihar">Bihar</option>
+                                <option value="Chhattisgarh">Chhattisgarh</option>
+                                <option value="Goa">Goa</option>
+                                <option value="Gujarat">Gujarat</option>
+                                <option value="Haryana">Haryana</option>
+                                <option value="Himachal Pradesh">Himachal Pradesh</option>
+                                <option value="Jharkhand">Jharkhand</option>
+                                <option value="Karnataka">Karnataka</option>
+                                <option value="Kerala">Kerala</option>
+                                <option value="Madhya Pradesh">Madhya Pradesh</option>
+                                <option value="Maharashtra">Maharashtra</option>
+                                <option value="Manipur">Manipur</option>
+                                <option value="Meghalaya">Meghalaya</option>
+                                <option value="Mizoram">Mizoram</option>
+                                <option value="Nagaland">Nagaland</option>
+                                <option value="Odisha">Odisha</option>
+                                <option value="Punjab">Punjab</option>
+                                <option value="Rajasthan">Rajasthan</option>
+                                <option value="Sikkim">Sikkim</option>
+                                <option value="Tamil Nadu">Tamil Nadu</option>
+                                <option value="Telangana">Telangana</option>
+                                <option value="Tripura">Tripura</option>
+                                <option value="Uttar Pradesh">Uttar Pradesh</option>
+                                <option value="Uttarakhand">Uttarakhand</option>
+                                <option value="West Bengal">West Bengal</option>
+                                <option value="Other">Other</option>
+
+                            </select>
+
+                        </div>
+
+                        <!-- CITY -->
+
+                        <div class="form-group">
+
+                            <label>
+
+                                City
+
+                            </label>
+
+                            <select id="su-city"
+                                    th:field="*{city}"
+                                    class="form-control">
+
+                                <option value="">Select City</option>
+
+                            </select>
+
+                            <!-- "Other" city input — shown only when city = "Other" -->
+                            <input type="text"
+                                   id="su-city-other"
+                                   name="cityOther"
+                                   class="form-control"
+                                   placeholder="Enter your city"
+                                   style="display:none;margin-top:0.5rem;">
+
+                        </div>
+
+                        <!-- COUNTRY -->
+
+                        <div class="form-group">
+
+                            <label>
+
+                                Country
+
+                            </label>
+
+                            <select id="su-country"
+                                    th:field="*{country}"
+                                    class="form-control">
+
+                                <option value="India">India</option>
+
+                            </select>
+
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-auth">
+                        Create My Account
+                    </button>
+
+                    <div class="bottom-link">
+                        Already have an account?
+                        <a href="/login">Login here</a>
+                    </div>
+
+                </form>
+
+            </div>
+        </div>
+
+        <div class="form-footer">
+            © 2025 <span>Xansa Stay</span>. All rights reserved.
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+
+    const stateCityMap = {
+
+        "Andhra Pradesh":[
+            "Visakhapatnam",
+            "Vijayawada",
+            "Guntur",
+            "Tirupati",
+            "Nellore",
+            "Kakinada",
+            "Rajahmundry",
+            "Anantapur",
+            "Kurnool",
+            "Ongole"
+        ],
+
+        "Arunachal Pradesh":[
+            "Itanagar",
+            "Naharlagun",
+            "Tawang",
+            "Pasighat",
+            "Ziro",
+            "Bomdila"
+        ],
+
+        "Assam":[
+            "Guwahati",
+            "Silchar",
+            "Dibrugarh",
+            "Jorhat",
+            "Tezpur",
+            "Nagaon",
+            "Tinsukia",
+            "Barpeta"
+        ],
+
+        "Bihar":[
+            "Patna",
+            "Gaya",
+            "Muzaffarpur",
+            "Bhagalpur",
+            "Purnia",
+            "Darbhanga",
+            "Ara",
+            "Begusarai"
+        ],
+
+        "Chhattisgarh":[
+            "Raipur",
+            "Bhilai",
+            "Durg",
+            "Bilaspur",
+            "Korba",
+            "Jagdalpur",
+            "Raigarh"
+        ],
+
+        "Goa":[
+            "Panaji",
+            "Margao",
+            "Vasco da Gama",
+            "Mapusa",
+            "Ponda"
+        ],
+
+        "Gujarat":[
+            "Ahmedabad",
+            "Surat",
+            "Vadodara",
+            "Rajkot",
+            "Bhavnagar",
+            "Jamnagar",
+            "Gandhinagar",
+            "Junagadh"
+        ],
+
+        "Haryana":[
+            "Gurugram",
+            "Faridabad",
+            "Panipat",
+            "Ambala",
+            "Karnal",
+            "Hisar",
+            "Rohtak",
+            "Sonipat"
+        ],
+
+        "Himachal Pradesh":[
+            "Shimla",
+            "Mandi",
+            "Dharamshala",
+            "Solan",
+            "Hamirpur",
+            "Bilaspur"
+        ],
+
+        "Jharkhand":[
+            "Ranchi",
+            "Jamshedpur",
+            "Dhanbad",
+            "Bokaro",
+            "Hazaribagh",
+            "Deoghar"
+        ],
+
+        "Karnataka":[
+            "Bengaluru",
+            "Mysuru",
+            "Mangaluru",
+            "Hubli",
+            "Belagavi",
+            "Shivamogga",
+            "Ballari"
+        ],
+
+        "Kerala":[
+            "Thiruvananthapuram",
+            "Kochi",
+            "Kozhikode",
+            "Thrissur",
+            "Kollam",
+            "Kannur",
+            "Alappuzha"
+        ],
+
+        "Madhya Pradesh":[
+            "Bhopal",
+            "Indore",
+            "Jabalpur",
+            "Gwalior",
+            "Ujjain",
+            "Sagar",
+            "Rewa",
+            "Satna",
+            "Ratlam",
+            "Dewas",
+            "Chhindwara",
+            "Katni"
+        ],
+        "Maharashtra":[
+            "Mumbai",
+            "Pune",
+            "Nagpur",
+            "Nashik",
+            "Aurangabad",
+            "Solapur",
+            "Kolhapur",
+            "Amravati",
+            "Akola",
+            "Jalgaon",
+            "Latur",
+            "Nanded",
+            "Sangli",
+            "Satara",
+            "Ratnagiri"
+        ],
+
+        "Manipur":[
+            "Imphal",
+            "Bishnupur",
+            "Churachandpur",
+            "Thoubal",
+            "Kakching",
+            "Ukhrul",
+            "Senapati"
+        ],
+
+        "Meghalaya":[
+            "Shillong",
+            "Tura",
+            "Jowai",
+            "Nongstoin",
+            "Baghmara",
+            "Williamnagar"
+        ],
+
+        "Mizoram":[
+            "Aizawl",
+            "Lunglei",
+            "Champhai",
+            "Kolasib",
+            "Serchhip",
+            "Saiha"
+        ],
+
+        "Nagaland":[
+            "Kohima",
+            "Dimapur",
+            "Mokokchung",
+            "Tuensang",
+            "Wokha",
+            "Mon"
+        ],
+
+        "Odisha":[
+            "Bhubaneswar",
+            "Cuttack",
+            "Rourkela",
+            "Sambalpur",
+            "Berhampur",
+            "Puri",
+            "Balasore",
+            "Baripada",
+            "Jharsuguda"
+        ],
+
+        "Punjab":[
+            "Amritsar",
+            "Ludhiana",
+            "Jalandhar",
+            "Patiala",
+            "Bathinda",
+            "Mohali",
+            "Hoshiarpur",
+            "Pathankot",
+            "Firozpur"
+        ],
+
+        "Rajasthan":[
+            "Jaipur",
+            "Jodhpur",
+            "Udaipur",
+            "Kota",
+            "Ajmer",
+            "Bikaner",
+            "Alwar",
+            "Bharatpur",
+            "Sikar",
+            "Pali",
+            "Chittorgarh"
+        ],
+
+        "Sikkim":[
+            "Gangtok",
+            "Namchi",
+            "Gyalshing",
+            "Mangan",
+            "Rangpo"
+        ],
+
+        "Tamil Nadu":[
+            "Chennai",
+            "Coimbatore",
+            "Madurai",
+            "Salem",
+            "Tiruchirappalli",
+            "Tirunelveli",
+            "Vellore",
+            "Erode",
+            "Thoothukudi",
+            "Kanchipuram",
+            "Thanjavur"
+        ],
+        "Telangana":[
+            "Hyderabad",
+            "Warangal",
+            "Nizamabad",
+            "Karimnagar",
+            "Khammam",
+            "Ramagundam",
+            "Mahabubnagar",
+            "Nalgonda",
+            "Suryapet"
+        ],
+
+        "Tripura":[
+            "Agartala",
+            "Dharmanagar",
+            "Kailashahar",
+            "Udaipur",
+            "Belonia",
+            "Ambassa"
+        ],
+
+        "Uttar Pradesh":[
+            "Lucknow",
+            "Kanpur",
+            "Noida",
+            "Ghaziabad",
+            "Agra",
+            "Varanasi",
+            "Prayagraj",
+            "Meerut",
+            "Aligarh",
+            "Bareilly",
+            "Gorakhpur",
+            "Jhansi",
+            "Moradabad",
+            "Mathura",
+            "Ayodhya"
+        ],
+
+        "Uttarakhand":[
+            "Dehradun",
+            "Haridwar",
+            "Rishikesh",
+            "Haldwani",
+            "Roorkee",
+            "Nainital",
+            "Almora",
+            "Pithoragarh",
+            "Rudrapur"
+        ],
+
+        "West Bengal":[
+            "Kolkata",
+            "Howrah",
+            "Durgapur",
+            "Asansol",
+            "Siliguri",
+            "Kharagpur",
+            "Malda",
+            "Haldia",
+            "Bardhaman"
+        ]
+
+    };
+
+    // ── Password show/hide ──
+    function togglePassword(inputId, btn) {
+        const input = document.getElementById(inputId);
+        if (input.type === "password") {
+            input.type = "text";
+            btn.textContent = "🙈";
+        } else {
+            input.type = "password";
+            btn.textContent = "👁️";
+        }
+    }
+
+    const stateDropdown = document.getElementById("su-state");
+    const cityDropdown  = document.getElementById("su-city");
+    const cityOtherInput = document.getElementById("su-city-other");
+
+    stateDropdown.addEventListener("change", function () {
+
+        cityDropdown.innerHTML = '<option value="">Select City</option>';
+        cityOtherInput.style.display = "none";
+        cityOtherInput.value = "";
+
+        const cities = stateCityMap[this.value];
+
+        if (!cities) {
+            // "Other" state selected — let user type a city
+            const opt = document.createElement("option");
+            opt.value = "Other";
+            opt.textContent = "Other";
+            cityDropdown.appendChild(opt);
+            return;
+        }
+
+        cities.forEach(function(city){
+            const option = document.createElement("option");
+            option.value = city;
+            option.textContent = city;
+            cityDropdown.appendChild(option);
+        });
+
+        // Add "Other" at the end of every city list
+        const otherOpt = document.createElement("option");
+        otherOpt.value = "Other";
+        otherOpt.textContent = "Other";
+        cityDropdown.appendChild(otherOpt);
+
+    });
+
+    cityDropdown.addEventListener("change", function () {
+        if (this.value === "Other") {
+            cityOtherInput.style.display = "block";
+            cityOtherInput.required = true;
+        } else {
+            cityOtherInput.style.display = "none";
+            cityOtherInput.required = false;
+            cityOtherInput.value = "";
+        }
+    });
+
+    (function () {
+
+        const form = document.getElementById('signupForm');
+
+        const EMAIL_RE  = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        const DIGITS_RE = /^\d+$/;
+
+        const rules = [
+
+            ['su-name','nameError',v=>v.trim().length>=2],
+
+            ['su-email','emailError',v=>EMAIL_RE.test(v.trim())],
+
+            ['su-contact','contactError',v=>DIGITS_RE.test(v)&&v.length===10],
+
+            ['su-password','passwordError',v=>v.length>=6],
+
+            ['su-confirm','confirmError',
+                v=>v===document.getElementById('su-password').value]
+
+        ];
+
+        function validate(inputEl,errEl,fn){
+
+            const ok=fn(inputEl.value);
+
+            inputEl.classList.toggle('is-invalid',!ok);
+
+            errEl.classList.toggle('visible',!ok);
+
+            return ok;
+
+        }
+
+        rules.forEach(([id,errId,fn])=>{
+
+            const el=document.getElementById(id);
+
+            const err=document.getElementById(errId);
+
+            el.addEventListener('input',()=>validate(el,err,fn));
+
+            el.addEventListener('blur',()=>validate(el,err,fn));
+
+        });
+
+        const TITLE_CASE_IDS=[
+            'su-name',
+            'su-address'
+        ];
+
+        function toTitleCase(str){
+
+            return str.toLowerCase().split(' ').map(
+
+                word=>word?word.charAt(0).toUpperCase()+word.slice(1):word
+
+            ).join(' ');
+
+        }
+
+        function applyTitleCase(el){
+
+            if(!el||!el.value) return;
+
+            if(el.tagName==="SELECT") return;
+
+            el.value=toTitleCase(el.value);
+
+        }
+
+        TITLE_CASE_IDS.forEach(id=>{
+
+            const el=document.getElementById(id);
+
+            if(!el) return;
+
+            el.addEventListener('blur',()=>applyTitleCase(el));
+
+        });
+
+        form.addEventListener('submit',function(e){
+
+            TITLE_CASE_IDS.forEach(id=>applyTitleCase(document.getElementById(id)));
+
+            let allOk=true;
+
+            rules.forEach(([id,errId,fn])=>{
+
+                const el=document.getElementById(id);
+
+                const err=document.getElementById(errId);
+
+                if(!validate(el,err,fn)) allOk=false;
+
+            });
+
+            // Agar city "Other" select hua hai to custom city field bhi check karo
+            if (cityDropdown.value === "Other") {
+                const otherVal = cityOtherInput.value.trim();
+                if (!otherVal) {
+                    cityOtherInput.style.border = "1.5px solid red";
+                    cityOtherInput.placeholder = "Please enter your city name";
+                    allOk = false;
+                } else {
+                    cityOtherInput.style.border = "";
+                    // City field ka value "Other" se replace karo real value se
+                    cityDropdown.disabled = true;
+                    const hidden = document.createElement("input");
+                    hidden.type = "hidden";
+                    hidden.name = "city";
+                    hidden.value = otherVal;
+                    form.appendChild(hidden);
+                }
+            }
+
+            if(!allOk){
+
+                e.preventDefault();
+
+            }
+
+        });
+
+    })();
+
+    function animateValue(id, start, end, duration, suffix = "", decimals = 0) {
+
+        let obj = document.getElementById(id);
+
+        let range = end - start;
+
+        let current = start;
+
+        let increment = range / (duration / 20);
+
+        let timer = setInterval(function () {
+
+            current += increment;
+
+            if (current >= end) {
+                current = end;
+                clearInterval(timer);
+            }
+
+            obj.textContent = current.toFixed(decimals) + suffix;
+
+        }, 20);
+    }
+
+    window.addEventListener("load", function () {
+
+        animateValue("years", 0, 15, 1200, "+");
+
+        animateValue("guests", 0, 50, 1800, "K+");
+
+        animateValue("rating", 0, 4.9, 1500, "★", 1);
+
+    });
+</script>
+
+</body>
+</html>

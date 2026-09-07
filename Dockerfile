@@ -2,7 +2,7 @@ FROM eclipse-temurin:21-jdk
 
 WORKDIR /app
 
-COPY "xansastays (2)/xansastays/xansastays" .
+COPY . .
 
 RUN chmod +x mvnw
 RUN ./mvnw clean package -DskipTests

@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Bookings – Xansa Stay</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="stylesheet" href="/css/home.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background: #eef1ee;
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+        }
+
+        /* ── Navbar (same as booking.html) ── */
+        nav {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            z-index: 200;
+            height: 84px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 4px 5rem;
+            background: white;
+            border-bottom: 1px solid #e2e6e2;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+        }
+        .logo { display: flex; align-items: center; height: 100%; }
+        .logo img { height: 70px; width: auto; object-fit: contain; }
+        .nav-links { display: flex; align-items: center; gap: 2rem; }
+        .nav-links a { font-size: 0.875rem; font-weight: 600; color: #6b7e6d; text-decoration: none; transition: color 0.2s; }
+        .nav-links a:hover { color: #3d5240; }
+        .nav-right { display: flex; align-items: center; gap: 1rem; }
+
+        .profile-dropdown-wrapper { position: relative; cursor: pointer; }
+        .profile-trigger {
+            display: flex; align-items: center; gap: 10px;
+            padding: 6px 12px; border-radius: 12px;
+            border: 1px solid #e2e6e2; transition: background 0.2s;
+        }
+        .profile-trigger:hover { background: #f7f8f6; }
+        .profile-info { display: flex; flex-direction: column; align-items: flex-end; line-height: 1.2; }
+        .profile-name { font-size: 0.875rem; font-weight: 600; color: #1c2b1e; }
+        .profile-role { font-size: 0.7rem; color: #6b7e6d; }
+        .profile-avatar {
+            width: 38px; height: 38px; border-radius: 50%;
+            background: #c9a84c; border: 2px solid #3d5240;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 0.9rem; color: #3d5240; flex-shrink: 0;
+        }
+        .profile-dropdown {
+            display: none; position: absolute; right: 0; top: calc(100% + 10px);
+            background: white; border-radius: 18px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.16);
+            min-width: 210px; z-index: 9999; overflow: hidden;
+            border: 1px solid #e2e6e2;
+        }
+        .profile-dropdown.show { display: block; }
+        .dropdown-header {
+            display: flex; align-items: center; gap: 12px;
+            padding: 1rem 1.25rem; border-bottom: 1px solid #e2e6e2; background: #f7f8f6;
+        }
+        .dh-name { font-size: 0.9rem; font-weight: 600; }
+        .dh-email { font-size: 0.75rem; color: #6b7e6d; margin-top: 2px; }
+        .profile-dropdown a {
+            display: flex; align-items: center; gap: 10px;
+            padding: 11px 1.25rem; font-size: 0.875rem; color: #1c2b1e;
+            text-decoration: none; transition: background 0.2s;
+        }
+        .profile-dropdown a:hover { background: #f7f8f6; color: #3d5240; }
+        .logout-link { color: #e24b4a !important; }
+        .logout-link:hover { background: #fff5f5 !important; }
+
+        /* ── Page Header ── */
+        .page-header {
+            background: #3d5240;
+            padding: calc(84px + 2.5rem) 5rem 2.5rem;
+        }
+        .page-header .breadcrumb {
+            display: flex; align-items: center; gap: 8px;
+            font-size: 0.8125rem; color: rgba(255,255,255,0.55); margin-bottom: 1rem;
+        }
+        .page-header .breadcrumb a { color: rgba(255,255,255,0.7); text-decoration: none; }
+        .page-header .breadcrumb a:hover { color: white; }
+        .page-header .breadcrumb span { color: rgba(255,255,255,0.35); }
+        .page-header h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(1.75rem, 3vw, 2.5rem);
+            color: white;
+        }
+        .page-header p { color: rgba(255,255,255,0.6); font-size: 0.9375rem; margin-top: 0.375rem; }
+
+        /* ── Layout ── */
+        .bookings-layout {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2.5rem 2rem 5rem;
+        }
+        .bookings-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 1.75rem;
+        }
+
+        .empty-state {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+            padding: 3.5rem 2rem;
+            text-align: center;
+            color: #6b7e6d;
+            grid-column: 1 / -1;
+        }
+        .empty-state i { font-size: 2.5rem; color: #c9d3ca; margin-bottom: 1rem; display: block; }
+        .empty-state a {
+            display: inline-block; margin-top: 1.25rem; padding: 12px 28px;
+            background: #3d5240; color: white; border-radius: 10px;
+            text-decoration: none; font-weight: 700; font-size: 0.875rem;
+        }
+
+        /* ── Booking Card (room-card style) ── */
+        .booking-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .booking-card:hover { transform: translateY(-4px); box-shadow: 0 12px 32px rgba(0,0,0,0.1); }
+
+        .booking-img-wrap { height: 200px; position: relative; overflow: hidden; background: #f0f0f0; }
+        .booking-img-wrap img { width: 100%; height: 100%; object-fit: cover; }
+
+        .status-badge {
+            position: absolute; top: 12px; left: 12px;
+            padding: 4px 14px; border-radius: 50px; font-size: 0.7rem;
+            font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .status-confirmed { background: #e6f4ea; color: #1a7f37; }
+        .status-pending   { background: #fff8e1; color: #b7791f; }
+        .status-cancelled { background: #fdeded; color: #c0392b; }
+        .status-completed { background: #e8ecf7; color: #3450a3; }
+
+        .booking-body { padding: 1.25rem; display: flex; flex-direction: column; gap: 10px; flex: 1; }
+
+        .booking-room-name {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: #1c2b1e;
+        }
+        .booking-room-number { font-size: 0.75rem; color: #9aaa9c; margin-top: -6px; }
+
+        .booking-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+        .booking-tags .tag {
+            padding: 3px 10px; border-radius: 50px; font-size: 0.7rem;
+            font-weight: 600; background: rgba(61,82,64,0.08); color: #3d5240;
+            display: flex; align-items: center; gap: 5px;
+        }
+        .booking-tags .tag i { font-size: 0.7rem; }
+
+        .booking-dates {
+            font-size: 0.8125rem; color: #6b7e6d;
+            display: flex; align-items: center; gap: 6px;
+        }
+        .booking-dates i { color: #3d5240; }
+
+        .booking-footer {
+            margin-top: auto;
+            display: flex; align-items: center; justify-content: space-between;
+            padding-top: 10px; border-top: 1px solid #eef1ee;
+        }
+        .booking-amount { font-family: 'Playfair Display', serif; font-size: 1.25rem; font-weight: 700; color: #3d5240; }
+        .booking-amount span { font-size: 0.75rem; font-weight: 400; color: #9aaa9c; }
+
+        .btn-view-booking {
+            padding: 9px 18px; background: #3d5240; color: white;
+            border: none; border-radius: 10px; font-size: 0.8125rem; font-weight: 700;
+            text-decoration: none; transition: background 0.2s;
+        }
+        .btn-view-booking:hover { background: #4a6350; }
+
+        .btn-cancel-booking {
+            padding: 9px 18px; background: #ffffff; color: #c0392b;
+            border: 1.5px solid #f3c6c6; border-radius: 10px;
+            font-size: 0.8125rem; font-weight: 700; cursor: pointer;
+            transition: background 0.2s, border-color 0.2s;
+        }
+        .btn-cancel-booking:hover { background: #fdeded; border-color: #e29a9a; }
+
+        .footer-actions { display: flex; align-items: center; gap: 8px; }
+
+        /* SweetAlert2 themed buttons */
+        .swal-btn-confirm {
+            background: #3d5240 !important;
+            color: white !important;
+            padding: 10px 24px !important;
+            border-radius: 10px !important;
+            font-weight: 700 !important;
+            font-size: 0.875rem !important;
+            border: none !important;
+            margin: 0 6px !important;
+        }
+        .swal-btn-cancel {
+            background: #f0f0f0 !important;
+            color: #1c2b1e !important;
+            padding: 10px 24px !important;
+            border-radius: 10px !important;
+            font-weight: 700 !important;
+            font-size: 0.875rem !important;
+            border: none !important;
+            margin: 0 6px !important;
+        }
+    </style>
+</head>
+<body>
+
+<!-- FLASH DATA (hidden — read by JS below) -->
+<div th:if="${success}" id="flashSuccess" th:text="${success}" style="display:none;"></div>
+<div th:if="${error}"   id="flashError"   th:text="${error}"   style="display:none;"></div>
+<div th:if="${info}"    id="flashInfo"    th:text="${info}"    style="display:none;"></div>
+
+<!-- ══ NAVBAR ══ -->
+<nav th:replace="~{navbar :: navbar}"></nav>
+
+<!-- ══ PAGE HEADER ══ -->
+<div class="page-header">
+    <div class="breadcrumb">
+        <a href="/static">Home</a>
+        <span>›</span>
+        <span style="color:rgba(255,255,255,0.8);">My Bookings</span>
+    </div>
+    <h1>My Bookings</h1>
+    <p>All your reservations in one place.</p>
+</div>
+
+<!-- ══ BOOKINGS GRID ══ -->
+<div class="bookings-layout">
+    <div class="bookings-grid">
+
+        <!-- Empty state -->
+        <div class="empty-state" th:if="${bookings == null or bookings.empty}">
+            <i class="fas fa-calendar-xmark"></i>
+            <p>No bookings have been made yet.</p>
+            <a href="/rooms">Browse Rooms</a>
+        </div>
+
+        <!-- Booking cards (room-card style) -->
+        <div class="booking-card" th:each="booking : ${bookings}">
+
+            <div class="booking-img-wrap">
+                <img th:if="${booking.room != null and booking.room.images != null and !booking.room.images.empty}"
+                     th:src="@{/api/rooms/image/{id}(id=${booking.room.images[0].imageId})}"
+                     th:alt="${booking.room.name}">
+                <img th:unless="${booking.room != null and booking.room.images != null and !booking.room.images.empty}"
+                     src="/images/room-deluxe.jpg" alt="Room">
+
+                <span class="status-badge"
+                      th:classappend="${booking.status != null ? 'status-' + #strings.toLowerCase(booking.status.name()) : 'status-pending'}"
+                      th:text="${booking.status}">Status</span>
+            </div>
+
+            <div class="booking-body">
+                <div class="booking-room-name"
+                     th:text="${booking.room != null ? booking.room.name : 'Room unavailable'}">
+                    Room Name
+                </div>
+                <div class="booking-room-number"
+                     th:if="${booking.room != null}"
+                     th:text="'Room #' + ${booking.room.roomNumber}">
+                    Room #101
+                </div>
+
+                <div class="booking-dates">
+                    <i class="fas fa-calendar-day"></i>
+                    <span th:text="${#temporals.format(booking.checkin, 'dd MMM yyyy, hh:mm a')}">Check-in</span>
+                    &rarr;
+                    <span th:text="${#temporals.format(booking.checkout, 'dd MMM yyyy, hh:mm a')}">Check-out</span>
+                </div>
+
+                <div class="booking-tags">
+                    <span class="tag"><i class="fas fa-user-group"></i><span th:text="${booking.guests} + ' Guest(s)'">Guests</span></span>
+                    <span class="tag"><i class="fas fa-moon"></i><span th:text="${booking.noOfDays} + ' Night(s)'">Nights</span></span>
+                </div>
+
+                <div class="booking-footer">
+                    <div class="booking-amount">
+                        ₹<span th:text="${#numbers.formatInteger(booking.totalAmount != null ? booking.totalAmount : 0, 1, 'COMMA')}">0</span>
+                    </div>
+                    <div class="footer-actions">
+                        <!-- Cancel button — sirf 24h window ke andar -->
+                        <button type="button"
+                                class="btn-cancel-booking"
+                                th:if="${(booking.status.name() == 'PENDING' or booking.status.name() == 'CONFIRMED')
+                                        and T(java.time.temporal.ChronoUnit).HOURS.between(booking.createdAt, T(java.time.LocalDateTime).now()) < 24}"
+                                th:data-booking-id="${booking.bookingId}"
+                                th:data-has-payment="${booking.paymentStatus != null and (booking.paymentStatus.name() == 'ADVANCE_PAID' or booking.paymentStatus.name() == 'PAID')}"
+                                onclick="confirmCancel(this)">
+                            Cancel
+                        </button>
+                        <!-- 24h window nikal gayi — cancel nahi ho sakta -->
+                        <span th:if="${(booking.status.name() == 'PENDING' or booking.status.name() == 'CONFIRMED')
+                                       and T(java.time.temporal.ChronoUnit).HOURS.between(booking.createdAt, T(java.time.LocalDateTime).now()) >= 24}"
+                              title="Cancellation window has expired"
+                              style="font-size:0.72rem;color:#b7791f;background:#fff8e1;padding:3px 10px;border-radius:50px;font-weight:600;">
+                            ⏰ Cancellation window expired
+                        </span>
+                        <a th:if="${booking.status.name() != 'CANCELLED'}" th:href="@{/checkout/{id}(id=${booking.bookingId})}" class="btn-view-booking">Checkout</a>
+                        <span th:if="${booking.status.name() == 'CANCELLED'}" style="font-size:0.8rem;color:#c0392b;font-weight:600;">Cancelled</span>
+                        <span th:if="${booking.status.name() == 'COMPLETED'}" style="font-size:0.8rem;color:#3450a3;font-weight:600;">Completed</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Hidden form used to POST the cancellation -->
+<form id="cancelForm" method="post" style="display:none;">
+</form>
+
+<script>
+    const xansaSwal = Swal.mixin({
+        customClass: { confirmButton: 'swal-btn-confirm' },
+        buttonsStyling: false,
+        fontFamily:     'Inter, sans-serif',
+    });
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const successEl = document.getElementById('flashSuccess');
+        const errorEl   = document.getElementById('flashError');
+        const infoEl    = document.getElementById('flashInfo');
+
+        if (successEl) {
+            const msg = successEl.textContent;
+            const isRefund = msg.toLowerCase().includes('refund');
+            xansaSwal.fire({
+                icon: 'success',
+                title: isRefund ? '✅ Booking Cancelled & Refund Initiated' : '✅ Success!',
+                html: isRefund
+                    ? `<div style="text-align:left;line-height:1.8;font-size:0.95rem;">
+                            <p>${msg}</p>
+                            <hr style="margin:12px 0;border-color:#eee;">
+                            <p style="color:#3d5240;font-weight:600;">📋 Refund Details:</p>
+                            <ul style="padding-left:1.2rem;color:#555;">
+                                <li>Refund will be processed via Razorpay</li>
+                                <li>Amount will be credited to your bank/UPI account within <strong>2-3 working days</strong></li>
+                                <li>For any issues, please contact our support team</li>
+                            </ul>
+                       </div>`
+                    : `<p>${msg}</p>`,
+                confirmButtonText: 'OK',
+                width: isRefund ? '480px' : undefined,
+            });
+        }
+        if (infoEl) {
+            xansaSwal.fire({
+                icon: 'info',
+                title: 'Booking Status',
+                text: infoEl.textContent,
+                confirmButtonText: 'OK',
+            });
+        }
+        if (errorEl) {
+            xansaSwal.fire({
+                icon: 'error',
+                title: 'Cancellation Failed',
+                text: errorEl.textContent,
+                confirmButtonText: 'OK',
+            });
+        }
+    });
+
+    function confirmCancel(btn) {
+        const bookingId = btn.dataset.bookingId;
+        const isPaid = btn.dataset.hasPayment === 'true';
+        Swal.fire({
+            icon: 'warning',
+            title: 'Cancel Booking?',
+            html: `
+                <div style="text-align:left;line-height:1.9;font-size:0.9rem;">
+                    <p style="margin-bottom:10px;">
+                        <strong>⚠️ Please Note:</strong> Cancellation is only allowed
+                        <span style="color:#c0392b;font-weight:700;">within 24 hours of booking</span>
+                        .
+                    </p>
+                    <hr style="border-color:#eee;margin:10px 0;">
+                    ${isPaid
+                ? `<p>✅ <strong>Refund:</strong> Your payment will be automatically refunded via Razorpay.</p>
+                           <p style="color:#6b7e6d;font-size:0.82rem;">⏱ Refund will reflect in your bank/UPI within <strong>2-3 working days</strong>.</p>`
+                : `<p>ℹ️ No payment was made, so <strong>no refund</strong> will be processed.</p>`
+            }
+                </div>`,
+            showCancelButton: true,
+            confirmButtonText: 'Yes, Cancel Booking',
+            cancelButtonText: 'No, Keep It',
+            buttonsStyling: false,
+            customClass: {
+                confirmButton: 'swal-btn-confirm',
+                cancelButton:  'swal-btn-cancel'
+            },
+            width: '460px'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                const form = document.getElementById('cancelForm');
+                form.action = '/booking/cancel/' + bookingId;
+                form.submit();
+            }
+        });
+    }
+
+    function toggleDropdown(event) {
+        event.stopPropagation();
+        const d = document.getElementById('profileDropdown');
+        if (d) d.classList.toggle('show');
+    }
+    window.addEventListener('click', function(e) {
+        if (!e.target.closest('.profile-dropdown-wrapper')) {
+            const d = document.getElementById('profileDropdown');
+            if (d) d.classList.remove('show');
+        }
+    });
+</script>
+</body>
+</html>

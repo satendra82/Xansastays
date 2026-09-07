@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xansa Stay – Luxury Redefined</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="stylesheet" href="/css/home.css">
+    <style>
+        .heart-btn {
+            position: absolute;
+            top: 10px; right: 10px;
+            width: 36px; height: 36px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.92);
+            backdrop-filter: blur(4px);
+            border: none; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px; z-index: 10;
+            transition: transform 0.2s;
+            box-shadow: 0 2px 8px rgba(0,0,0,.18);
+        }
+        .heart-btn:hover { transform: scale(1.2); }
+        .heart-btn.fav-active { background: #fff0f0; }
+        .room-img { position: relative !important; }
+    </style>
+</head>
+<body>
+
+<!-- ======= NAVBAR ======= -->
+<nav th:replace="~{navbar :: navbar}"></nav>
+
+<!-- ======= HERO ======= -->
+<section class="hero">
+    <div class="hero-content">
+        <div class="hero-text">
+            <div class="hero-eyebrow">✦ Luxury Hotel Experience</div>
+            <h1 class="hero-title" id="heroTitle">Your Perfect<br><em>Escape</em> Awaits<br>at Xansa.</h1>
+            <p class="hero-sub">Experience world-class hospitality, elegant rooms, and unforgettable moments crafted just for you.</p>
+            <div class="hero-cta-row">
+                <button class="btn-primary" onclick="document.getElementById('rooms').scrollIntoView({behavior:'smooth'})">Book Now</button>
+                <button class="btn-outline" onclick="document.getElementById('rooms').scrollIntoView({behavior:'smooth'})">View Rooms</button>
+            </div>
+        </div>
+        <div class="hero-visual">
+            <div class="hero-circle">
+                <img class="active" src="/images/Roomimages.jpg" alt="Luxury Room 1">
+                <img src="/images/Gallary/img_7.png" alt="Luxury Room 2">
+                <img src="/images/Gallary/img_8.png" alt="Luxury Room 3">
+                <img src="/images/Gallary/img_9.png" alt="Luxury Room 4">
+                <img src="/images/Gallary/img_10.png" alt="Luxury Room 4">
+            </div>
+            <!--     avg rating on badge-->
+
+            <a th:href="@{/reviews/hotel/1}" class="hero-badge">
+
+                <div class="badge-icon">⭐</div>
+
+                <div class="badge-text">
+                    <strong style="white-space:nowrap;">
+                        <span th:text="${avgRating}" style="font-weight:700; color:#000;">0.0</span><span style="color:#64748b;">/</span><span style="font-weight:400; color:#64748b;">5.0</span>
+                    </strong>
+
+                    <span>
+            <span th:text="${totalReviews}">0</span>
+            Guest Reviews
+        </span>
+                </div>
+
+            </a>
+
+        </div>
+
+    </div>
+
+    <!-- SEARCH BAR -->
+    <div class="search-wrap">
+        <div class="search-bar">
+            <div class="search-field">
+                <div class="field-label">Check-in Date</div>
+                <input type="date" id="checkinDate" class="field-input"
+                       th:min="${#dates.format(#dates.createNow(), 'yyyy-MM-dd')}"
+                       style="border:none; background:transparent; font-size:14px; cursor:pointer; width:100%;">
+            </div>
+            <div class="search-field">
+                <div class="field-label">Check-out Date</div>
+                <input type="date" id="checkoutDate" class="field-input"
+                       style="border:none; background:transparent; font-size:14px; cursor:pointer; width:100%;">
+            </div>
+            <div class="search-field">
+                <div class="field-label">Guests</div>
+                <select id="guestCount" style="border:none; background:transparent; font-size:14px; cursor:pointer; width:100%;">
+                    <option value="1">👤 1 Adult</option>
+                    <option value="2" selected>👤 2 Adults</option>
+                    <option value="3">👤 3 Adults</option>
+                    <option value="4">👤 4 Adults</option>
+                </select>
+            </div>
+            <div class="search-field">
+                <div class="field-label">Room Type</div>
+                <select id="roomTypeFilter" style="border:none; background:transparent; font-size:14px; cursor:pointer; width:100%;">
+                    <option value="">🛏 All Rooms</option>
+                    <option value="SINGLE">🛏 Single</option>
+                    <option value="DOUBLE">🛏 Double</option>
+                    <option value="SUITE">🛏 Suite</option>
+                    <option value="DORMITORY">🛏 Dormitory</option>
+                </select>
+            </div>
+            <button class="btn-search" onclick="checkAvailability()">CHECK AVAILABILITY</button>
+        </div>
+    </div>
+
+    <!-- AMENITIES STRIP -->
+    <div class="amenities-strip">
+        <div class="amenity">Swimming Pool</div>
+        <div class="amenity">Fine Dining</div>
+        <div class="amenity">Spa & Wellness</div>
+        <div class="amenity">Fitness Center</div>
+        <div class="amenity">Free Wi-Fi</div>
+        <div class="amenity">Valet Parking</div>
+        <div class="amenity">Conference Hall</div>
+    </div>
+</section>
+
+<!-- ======= STATS ======= -->
+<section class="stats-section">
+    <div class="stats-left">
+        <h2>Excellence in Every Corner of Xansa Stay</h2>
+        <p>We deliver an unmatched hospitality experience with world-class amenities, dedicated staff, and luxury accommodations.</p>
+    </div>
+    <div class="stats-numbers">
+        <div class="stat"><div class="stat-num">120+</div><div class="stat-lbl">Luxury Rooms</div></div>
+        <div class="stat"><div class="stat-num">15+</div><div class="stat-lbl">Years of Service</div></div>
+        <div class="stat"><div class="stat-num">50K+</div><div class="stat-lbl">Happy Guests</div></div>
+        <div class="stat"><div class="stat-num"><span th:text="${avgRating}">4.9</span>★</div><div class="stat-lbl">Average Rating</div></div>
+    </div>
+</section>
+
+<!-- ======= ROOMS SECTION ======= -->
+<!-- FIX: section id="rooms" add kiya — scroll target aur nav anchor dono kaam karenge -->
+<section id="rooms">
+    <div class="rooms-heading">
+        <div class="section-eyebrow" style="display:inline-block;">Our Collection</div>
+        <h2 class="section-title" style="margin-top:8px;">Luxury Rooms & Suites</h2>
+    </div>
+
+    <div class="rooms-grid" id="roomsGrid">
+
+        <div th:each="room, iterStat : ${rooms}"
+             th:if="${iterStat.index < 6}"
+             class="room-card"
+             th:attr="data-guests=${room.maxGuests},data-roomtype=${room.roomType},data-status=${room.status}">
+
+            <div class="room-img r1">
+                <img th:if="${room.images != null and !room.images.empty}"
+                     th:src="@{/admin/rooms/image/{id}(id=${room.images[0].imageId})}"
+                     th:alt="${room.name}">
+                <img th:unless="${room.images != null and !room.images.empty}"
+                     src="/images/room-deluxe.jpg" alt="Room">
+                <span class="room-tag"
+                      th:text="${room.status != null and room.status.name() == 'AVAILABLE'} ? 'Available' : 'Booked'">
+                </span>
+                <button class="heart-btn"
+                        th:attr="data-roomid=${room.roomId}"
+                        onclick="toggleFav(event, this)"
+                        title="Favourite mein add karein">🤍</button>
+            </div>
+
+            <div class="room-body">
+                <div class="room-name" th:text="${room.name}">Room Name</div>
+                <div class="room-features">
+                    <span class="feat" th:if="${room.areaSqm != null}" th:text="${room.areaSqm} + ' m²'"></span>
+                    <span class="feat" th:if="${room.maxGuests != null}" th:text="${room.maxGuests} + ' Guests'"></span>
+                    <span class="feat" th:if="${room.viewType != null and room.viewType != ''}" th:text="${room.viewType}"></span>
+                    <span class="feat" th:if="${room.bedType != null and room.bedType != ''}" th:text="${room.bedType}"></span>
+                </div>
+                <div class="room-footer">
+                    <div>
+                        <div class="room-price">
+                            ₹<span th:text="${#numbers.formatInteger(room.pricePerDay, 1, 'COMMA')}">0</span>
+                            <span>/ night</span>
+                        </div>
+                        <div class="price-note">Taxes included</div>
+                    </div>
+                    <!-- View button — room detail page pe le jaata hai -->
+                    <button class="btn-book"
+                            th:attr="data-roomid=${room.roomId}"
+                            onclick="viewRoom(this)">View</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="noRoomResult" style="display:none; text-align:center; padding:40px; color:#64748b; grid-column:1/-1;">
+            <p> No rooms are available for the selected filters.</p>
+        </div>
+
+    </div>
+
+    <!-- View All Button — always show if rooms exist -->
+    <div id="viewAllWrap" style="text-align:center;"
+         th:if="${rooms != null and !rooms.empty}">
+        <button class="btn-view-all" id="viewAllBtn" onclick="window.location.href='/rooms'">
+            View All Rooms &nbsp;(<span th:text="${#lists.size(rooms)}">0</span>)&nbsp;→
+        </button>
+    </div>
+</section>
+
+<!-- ======= SERVICES ======= -->
+<section class="services-section" id="services">
+    <div style="text-align:center;">
+        <div class="section-eyebrow" style="display:inline-block;">What We Offer</div>
+        <h2 class="section-title" style="margin-top:8px;">Hotel Services</h2>
+    </div>
+
+    <div class="services-grid">
+
+        <div class="service-card">
+            <div class="service-icon">
+                <img src="/images/icon-dining.svg" alt="Fine Dining">
+            </div>
+            <div class="service-name">Fine Dining</div>
+        </div>
+
+        <div class="service-card">
+            <div class="service-icon">
+                <img src="/images/icon-spa.svg" alt="Spa & Wellness">
+            </div>
+            <div class="service-name">Spa & Wellness</div>
+        </div>
+
+        <div class="service-card">
+            <div class="service-icon">
+                <img src="/images/icon-pool.svg" alt="Swimming Pool">
+            </div>
+            <div class="service-name">Swimming Pool</div>
+        </div>
+
+        <div class="service-card">
+            <div class="service-icon">
+                <img src="/images/icon-gym.svg" alt="Fitness Center">
+            </div>
+            <div class="service-name">Fitness Center</div>
+        </div>
+
+        <div class="service-card">
+            <div class="service-icon">
+                <img src="/images/icon-event.svg" alt="Event & Banquet">
+            </div>
+            <div class="service-name">Event & Banquet</div>
+        </div>
+
+        <div class="service-card">
+            <div class="service-icon">
+                <img src="/images/icon-bar.svg" alt="Rooftop Bar">
+            </div>
+            <div class="service-name">Rooftop Bar</div>
+        </div>
+
+        <div class="service-card">
+            <div class="service-icon">
+                <img src="/images/icon-valet.svg" alt="Valet & Transport">
+            </div>
+            <div class="service-name">Valet & Transport</div>
+        </div>
+
+        <div class="service-card">
+            <div class="service-icon">
+                <img src="/images/icon-kids.svg" alt="Kids Club">
+            </div>
+            <div class="service-name">Kids Club</div>
+        </div>
+
+    </div>
+</section>
+
+<!-- ======= GALLERY ======= -->
+<section class="gallery-section" id="gallery">
+    <div class="section-header">
+        <div>
+            <div class="section-eyebrow">Visual Tour</div>
+            <h2 class="section-title">Gallery</h2>
+        </div>
+        <a th:href="@{/gallery}" class="view-all-link">View All Photos →</a>
+    </div>
+    <div class="gallery-grid">
+        <div class="gallery-item g1"><img src="/images/room-deluxe.jpg" alt="Luxury Room"></div>
+        <div class="gallery-item g2"><img src="/images/SwimmingPool.png" alt="Swimming Pool"></div>
+        <div class="gallery-item g3"><img src="/images/Dining.png" alt="Fine Dining"></div>
+        <div class="gallery-item g4"><img src="/images/spa.jpeg" alt="Spa"></div>
+        <div class="gallery-item g5"><img src="/images/Garden.png" alt="Garden"></div>
+    </div>
+</section>
+
+<!-- ======= TESTIMONIAL ======= -->
+<section class="testimonial-section">
+    <h2>What Our Guests Say</h2>
+    <p class="sub">Real experiences from our valued guests</p>
+
+    <!-- Agar abhi tak koi review nahi hai -->
+    <div class="no-reviews-msg" th:if="${#lists.isEmpty(latestReviews)}">
+        No reviews yet. Be the first to share your experience!
+        <div style="margin-top: 1.25rem;">
+            <a th:href="@{/reviews/hotel/1}"
+               style="color: var(--clr-gold); font-weight: 600; font-size: 0.9375rem; text-decoration: none; letter-spacing: 0.02em; border: 1px solid var(--clr-gold); padding: 10px 24px; border-radius: 8px; display: inline-block;">
+                Write a Review &nbsp;→
+            </a>
+        </div>
+    </div>
+
+    <!-- Latest 4-5 reviews, DB se dynamically aate hain, grid me ek saath dikhte hain -->
+    <div class="testimonial-grid" th:if="${!#lists.isEmpty(latestReviews)}">
+        <!-- FIX: Hardcoded /reviews/hotel/1 replaced with dynamic hotel ID from review -->
+        <a class="testimonial-card" th:each="r : ${latestReviews}" th:href="@{/reviews/hotel/{id}(id=${r.hotel.hotelId})}">
+            <div class="testimonial-author">
+                <div class="author-avatar">
+                    <img th:if="${r.guest.profilePic != null and !r.guest.profilePic.isEmpty()}"
+                         th:src="${r.guest.profilePic}" alt="Guest photo">
+                    <span th:unless="${r.guest.profilePic != null and !r.guest.profilePic.isEmpty()}"
+                          class="author-initial"
+                          th:text="${#strings.substring(r.guest.name,0,1)}">P</span>
+                </div>
+                <div>
+                    <div class="author-name" th:text="${r.guest.name}">Guest Name</div>
+                    <div class="stars">
+                        <span class="star-icons">
+                            <i th:each="i : ${#numbers.sequence(1,5)}"
+                               th:class="${i <= r.rating} ? 'fas fa-star' : 'far fa-star'"></i>
+                        </span>
+                        <span class="rating-num" th:text="${r.rating} + '.0'">5.0</span>
+                    </div>
+                </div>
+            </div>
+            <div class="big-quote">"</div>
+            <p class="testimonial-text" th:text="${r.review}">Review text goes here.</p>
+        </a>
+    </div>
+
+    <!-- View All Reviews link -->
+    <div th:if="${!#lists.isEmpty(latestReviews)}" style="text-align:center; margin-top: 2rem;">
+        <a th:href="@{/reviews/hotel/{id}(id=${latestReviews[0].hotel.hotelId})}"
+           style="color: var(--clr-gold); font-weight: 600; font-size: 0.9375rem; text-decoration: none; letter-spacing: 0.02em;">
+            View All Reviews &nbsp;→
+        </a>
+    </div>
+</section>
+<!-- ======= CTA BANNER ======= -->
+<section class="cta-section">
+    <div>
+        <h2>Ready for an Unforgettable Stay at Xansa?</h2>
+        <p>Book directly and get exclusive deals, early check-in, and complimentary breakfast.</p>
+    </div>
+    <button class="btn-dark" onclick="window.location.href='/rooms'">Reserve Your Room →</button>
+</section>
+
+<!-- ======= FOOTER ======= -->
+<footer>
+    <div class="footer-top">
+        <div class="footer-brand">
+            <div class="footer-logo">
+                <img src="/images/xansastaylogo2.png" alt="Xansa Stay Logo">
+            </div>
+            <p>Experience luxury, comfort, and world-class hospitality. Your dream stay begins here at Xansa.</p>
+            <div class="footer-socials">
+                <div class="social-btn"><i class="fab fa-facebook-f"></i></div>
+                <div class="social-btn"><i class="fab fa-linkedin-in"></i></div>
+                <div class="social-btn"><i class="fab fa-twitter"></i></div>
+                <div class="social-btn"><i class="fab fa-youtube"></i></div>
+            </div>
+        </div>
+        <div class="footer-col">
+            <h4>Hotel</h4>
+            <a href="#">About Xansa</a>
+            <a href="#">Our Story</a>
+            <a href="#">Awards</a>
+            <a href="#">Careers</a>
+        </div>
+        <div class="footer-col">
+            <h4>Services</h4>
+            <a href="#">Rooms & Suites</a>
+            <a href="#">Dining</a>
+            <a href="#">Spa</a>
+            <a href="#">Events</a>
+        </div>
+        <div class="footer-col">
+            <h4>Contact</h4>
+            <a href="#">+91 98765 43210</a>
+            <a href="#">hello@xansa.com</a>
+            <a href="#">Sagar, MP, India</a>
+            <a href="#">Support & FAQ</a>
+        </div>
+    </div>
+    <div class="footer-bottom">
+        <p>© 2025 <span>Xansa Stay</span>. All rights reserved.</p>
+        <p>Crafted with care for luxury seekers</p>
+    </div>
+</footer>
+
+<!-- ======= SCRIPTS ======= -->
+<script>
+    // Hero circle image crossfade slideshow
+    document.addEventListener('DOMContentLoaded', function() {
+        const heroSlides = document.querySelectorAll('.hero-circle img');
+        let heroIdx = 0;
+        if (heroSlides.length > 1) {
+            setInterval(function() {
+                heroSlides[heroIdx].classList.remove('active');
+                heroIdx = (heroIdx + 1) % heroSlides.length;
+                heroSlides[heroIdx].classList.add('active');
+            }, 3000);
+        }
+    });
+
+    // Hero title typewriter effect (only for logged-in guests) — repeats every 30 sec
+    document.addEventListener('DOMContentLoaded', function() {
+        var heroTitleEl = document.getElementById('heroTitle');
+        if (!heroTitleEl) return;
+
+        var tokens = [
+            { text: 'Your Perfect ', tag: 'span' },
+            { text: 'Escape', tag: 'em' },
+            { text: ' Awaits', tag: 'span' },
+            { raw: true, text: '<br>' },
+            { text: 'at Xansa.', tag: 'span' }
+        ];
+
+        var REPEAT_INTERVAL = 30000; // 30 seconds
+
+        function runTypewriter() {
+            heroTitleEl.innerHTML = '<span class="hero-cursor">|</span>';
+            var cursorEl = heroTitleEl.querySelector('.hero-cursor');
+
+            var tIdx = 0, cIdx = 0, currentEl = null;
+
+            function typeStep() {
+                if (tIdx >= tokens.length) {
+                    if (cursorEl) cursorEl.remove();
+                    // 30 sec baad dobara type karo
+                    setTimeout(runTypewriter, REPEAT_INTERVAL);
+                    return;
+                }
+                var token = tokens[tIdx];
+
+                if (token.raw) {
+                    heroTitleEl.insertBefore(document.createElement('br'), cursorEl);
+                    tIdx++;
+                    cIdx = 0;
+                    currentEl = null;
+                    typeStep();
+                    return;
+                }
+
+                if (!currentEl) {
+                    currentEl = document.createElement(token.tag);
+                    heroTitleEl.insertBefore(currentEl, cursorEl);
+                }
+
+                if (cIdx < token.text.length) {
+                    currentEl.textContent += token.text[cIdx];
+                    cIdx++;
+                    setTimeout(typeStep, 75);
+                } else {
+                    tIdx++;
+                    cIdx = 0;
+                    currentEl = null;
+                    setTimeout(typeStep, 75);
+                }
+            }
+
+            setTimeout(typeStep, 300);
+        }
+
+        runTypewriter();
+    });
+
+    // Profile Dropdown Toggle
+    function toggleDropdown(event) {
+        event.stopPropagation();
+        const dropdown = document.getElementById('profileDropdown');
+        if (dropdown) {
+            dropdown.classList.toggle('show');
+        }
+    }
+
+    window.addEventListener('click', function(e) {
+        if (!e.target.closest('.profile-dropdown-wrapper')) {
+            const d = document.getElementById('profileDropdown');
+            if (d) d.classList.remove('show');
+        }
+    });
+
+    // Date setup
+    document.addEventListener('DOMContentLoaded', function() {
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('checkinDate').min = today;
+        document.getElementById('checkinDate').value = today;
+
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        document.getElementById('checkoutDate').min = tomorrow.toISOString().split('T')[0];
+        document.getElementById('checkoutDate').value = tomorrow.toISOString().split('T')[0];
+
+        document.getElementById('checkinDate').addEventListener('change', function() {
+            const checkin = new Date(this.value);
+            checkin.setDate(checkin.getDate() + 1);
+            const minCheckout = checkin.toISOString().split('T')[0];
+            document.getElementById('checkoutDate').min = minCheckout;
+            if (document.getElementById('checkoutDate').value < minCheckout) {
+                document.getElementById('checkoutDate').value = minCheckout;
+            }
+        });
+    });
+
+    // Check Availability + Filter
+    function checkAvailability() {
+        const checkin  = document.getElementById('checkinDate').value;
+        const checkout = document.getElementById('checkoutDate').value;
+        const guests   = document.getElementById('guestCount').value;
+        const roomType = document.getElementById('roomTypeFilter').value;
+
+        if (!checkin || !checkout) {
+            alert('Please select check-in and check-out dates!');
+            return;
+        }
+
+        document.getElementById('rooms').scrollIntoView({ behavior: 'smooth' });
+
+        const cards = document.querySelectorAll('.room-card');
+        let visibleCount = 0;
+
+        cards.forEach(card => {
+            const cardGuests   = card.getAttribute('data-guests');
+            const cardRoomType = card.getAttribute('data-roomtype');
+            const cardStatus   = card.getAttribute('data-status');
+
+            const guestsOk = !guests   || parseInt(cardGuests) >= parseInt(guests);
+            const typeOk   = !roomType || cardRoomType === roomType;
+            const statusOk = cardStatus === 'AVAILABLE';
+
+            if (guestsOk && typeOk && statusOk) {
+                card.style.display = 'block';
+                visibleCount++;
+            } else {
+                card.style.display = 'none';
+            }
+        });
+
+        const noResult = document.getElementById('noRoomResult');
+        if (noResult) {
+            noResult.style.display = visibleCount === 0 ? 'block' : 'none';
+        }
+    }
+
+    // Show All Rooms — toggle between show-all and show-3
+    let allVisible = false;
+    function showAllRooms() {
+        const cards = document.querySelectorAll('#roomsGrid .room-card');
+        const btn = document.getElementById('viewAllBtn');
+
+        if (!allVisible) {
+            // Sab rooms dikhao
+            cards.forEach(function(card) {
+                card.style.display = 'block';
+            });
+            btn.textContent = 'Show Less ↑';
+            allVisible = true;
+        } else {
+            // Sirf 3 dikhao
+            cards.forEach(function(card, index) {
+                card.style.display = index < 6 ? 'block' : 'none';
+            });
+            // Button text reset — total count ke saath
+            btn.innerHTML = 'View All Rooms &nbsp;(' + cards.length + ')&nbsp;→';
+            allVisible = false;
+            // Rooms section pe wapis scroll karo
+            document.getElementById('rooms').scrollIntoView({ behavior: 'smooth' });
+        }
+    }
+
+    // View button — room detail page pe redirect
+    function viewRoom(btn) {
+        const roomId = btn.getAttribute('data-roomid');
+        if (roomId) {
+            window.location.href = '/room/' + roomId;
+        }
+    }
+
+    // FIX: bookRoom function add kiya — roomId le ke booking page pe redirect
+    function bookRoom(btn) {
+        const roomId = btn.getAttribute('data-roomid');
+        if (roomId) {
+            window.location.href = '/booking?roomId=' + roomId;
+        }
+    }
+
+    async function toggleFav(event, btn) {
+        event.stopPropagation();
+        const roomId = btn.getAttribute('data-roomid');
+        try {
+            const res  = await fetch('/api/favourites/toggle/' + roomId, { method: 'POST' });
+            const data = await res.json();
+            if (res.status === 401) {
+                alert('Favourite ke liye pehle login karein!');
+                window.location.href = '/login';
+                return;
+            }
+            if (data.success) {
+                btn.textContent = data.favourited ? '❤️' : '🤍';
+                btn.classList.toggle('fav-active', data.favourited);
+            }
+        } catch(e) { console.error(e); }
+    }
+
+    async function checkFavourites() {
+        const btns = document.querySelectorAll('.heart-btn');
+        for (const btn of btns) {
+            const roomId = btn.getAttribute('data-roomid');
+            try {
+                const res  = await fetch('/api/favourites/check/' + roomId);
+                const data = await res.json();
+                if (data.favourited) {
+                    btn.textContent = '❤️';
+                    btn.classList.add('fav-active');
+                }
+            } catch(e) {}
+        }
+    }
+    document.addEventListener('DOMContentLoaded', checkFavourites);
+
+    // Gallery SELECT ROOM scroll
+    document.addEventListener('DOMContentLoaded', function() {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('scrollTo') === 'rooms') {
+            setTimeout(function() {
+                const el = document.getElementById('rooms');
+                if (el) el.scrollIntoView({ behavior: 'smooth' });
+            }, 300);
+        }
+
+    });
+
+</script>
+</body>
+</html>

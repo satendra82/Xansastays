@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+    <title>XansaStays — Checkout Management</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@300;400;500;600&display=swap');
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --gold:    #C9A84C;
+            --gold-lt: #F0DFA0;
+            --ink:     #1A1A2E;
+            --ink-mid: #2E2E4A;
+            --slate:   #4A4A6A;
+            --mist:    #F5F4F0;
+            --white:   #FFFFFF;
+            --emerald: #2E8B57;
+            --crimson: #C0392B;
+            --sky:     #2980B9;
+            --font-display: 'Playfair Display', Georgia, serif;
+            --font-body:    'Inter', system-ui, sans-serif;
+            --radius: 12px;
+            --radius-sm: 8px;
+            --shadow: 0 2px 12px rgba(26,26,46,.08);
+            --shadow-hover: 0 6px 28px rgba(26,26,46,.16);
+            --sidebar-w: 260px;
+        }
+
+        body {
+            font-family: var(--font-body);
+            background: var(--mist);
+            color: white;
+            display: flex;
+            min-height: 100vh;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* ── OVERLAY ──────────────────────────── */
+        .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 90; backdrop-filter: blur(2px); }
+        .overlay.open { display: block; }
+
+        /* ── SIDEBAR ──────────────────────────── */
+        .sidebar {
+            width: var(--sidebar-w);
+            background:#3f5f3f;
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            top: 0; left: 0; bottom: 0;
+            z-index: 100;
+            transition: transform .3s cubic-bezier(.4,0,.2,1);
+            overflow-y: auto;
+            transform: translateX(-100%);
+            -webkit-overflow-scrolling: touch;
+        }
+        .sidebar.open { transform: translateX(0); }
+
+        .sidebar-logo { padding: 24px 20px 18px; border-bottom: 1px solid rgba(201,168,76,.20); display: flex; align-items: center; justify-content: space-between; }
+        .sidebar-logo .brand { font-family: var(--font-display); font-size: 1.3rem; color: var(--gold); }
+        .sidebar-logo .tagline { font-size: .62rem; color: var(--slate); letter-spacing: 1.5px; text-transform: uppercase; margin-top: 2px; }
+        .sidebar-close {
+            background:#3f5f3f; border: none; color: var(--slate); font-size: 1.1rem; cursor: pointer;
+            padding: 8px 10px; border-radius: var(--radius-sm); line-height: 1;
+            min-width: 36px; min-height: 36px; display: flex; align-items: center; justify-content: center;
+        }
+
+        .nav-section { padding: 16px 0 4px; }
+        .nav-label { font-size: .58rem; letter-spacing: 2px; text-transform: uppercase; color: white; padding: 0 18px 6px; }
+        .nav-item {
+            display: flex; align-items: center; gap: 12px; padding: 13px 18px; color: #A0A0C0; text-decoration: none;
+            font-size: .85rem; font-weight: 500; border-left: 3px solid transparent; transition: all .15s;
+            cursor: pointer; min-height: 48px;
+        }
+        .nav-item:hover, .nav-item.active { color: var(--gold-lt); background: rgba(201,168,76,.08); border-left-color: var(--gold); }
+        .nav-item .icon { font-size: 1.1rem; width: 22px; text-align: center; flex-shrink: 0; }
+
+        .sidebar-bottom { margin-top: auto; padding: 16px; border-top: 1px solid rgba(201,168,76,.12); }
+        .admin-chip { display: flex; align-items: center; gap: 10px; }
+        .avatar {
+            width: 38px; height: 38px; border-radius: 50%; background: var(--gold);
+            display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: .82rem; color: var(--ink);
+            flex-shrink: 0;
+        }
+        .admin-info .name { font-size: .82rem; color: var(--white); font-weight: 600; }
+        .admin-info .role { font-size: .70rem; color: var(--slate); }
+
+        /* ── MAIN ─────────────────────────────── */
+        .main { flex: 1; display: flex; flex-direction: column; min-height: 100vh; width: 100%; }
+
+        /* ── TOPBAR ───────────────────────────── */
+        .topbar {
+            background: var(--white); padding: 0 16px; height: 56px; display: flex; align-items: center;
+            justify-content: space-between; border-bottom: 1px solid #E8E6E0; position: sticky; top: 0; z-index: 50;
+            box-shadow: 0 1px 6px rgba(0,0,0,.06);
+        }
+        .topbar-left { display: flex; align-items: center; gap: 10px; }
+        .hamburger {
+            background: none; border: none; cursor: pointer; padding: 8px; display: flex; flex-direction: column;
+            gap: 5px; border-radius: var(--radius-sm); min-width: 40px; min-height: 40px; align-items: center; justify-content: center;
+        }
+        .hamburger span { display: block; width: 20px; height: 2px; background: var(--ink); border-radius: 2px; }
+        .topbar-title { font-family: var(--font-display); font-size: 1.15rem; color: var(--ink); }
+        .topbar-meta { display: flex; align-items: center; gap: 12px; }
+        .notif { position: relative; font-size: 1.3rem; cursor: pointer; padding: 6px; min-width: 40px; min-height: 40px; display:flex; align-items:center; justify-content:center; }
+        .notif-dot { position: absolute; top: 4px; right: 4px; width: 9px; height: 9px; background: var(--crimson); border-radius: 50%; border: 1.5px solid var(--white); }
+
+        /* ── CONTENT ──────────────────────────── */
+        .content { padding: 16px 14px 80px; flex: 1 0 auto; }
+
+        .page-head { margin-bottom: 16px; }
+        .page-head h1 { font-family: var(--font-display); font-size: 1.35rem; color: var(--ink); }
+        .page-head p { font-size: .78rem; color: var(--slate); margin-top: 2px; }
+
+        /* ── STATS GRID ───────────────────────── */
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+        .stat-card {
+            background: var(--white); border-radius: var(--radius); padding: 16px 14px; box-shadow: var(--shadow);
+            display: flex; flex-direction: column; gap: 6px; border-top: 3px solid #3f5f3f; position: relative; overflow: hidden;
+            transition: transform .25s ease;
+        }
+        .stat-card:hover { transform: scale(1.03); }
+        .stat-label { font-size: .62rem; letter-spacing: 1px; text-transform: uppercase; color: var(--slate); font-weight: 600; display:flex; align-items:center; gap:6px; }
+        .dot { width: 7px; height: 7px; border-radius: 50%; display:inline-block; }
+        .dot.total    { background: var(--ink-mid); }
+        .dot.active   { background: var(--emerald); }
+        .dot.inactive { background: #C9A84C; }
+        .stat-value { font-family: var(--font-display); font-size: 1.7rem; color: var(--ink); line-height: 1; }
+        .stat-sub { font-size: .67rem; color: var(--slate); }
+
+        /* ── CARD ─────────────────────────────── */
+        .card { background: var(--white); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; margin-bottom: 16px; }
+        .card-header { padding: 14px 16px 10px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+        .card-title { font-family: var(--font-display); font-size: .98rem; color: var(--ink); }
+        .card-sub { font-size: .68rem; color: var(--slate); }
+
+        /* ── FILTER TABS + SEARCH ─────────────── */
+        .toolbar { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 0 16px 14px; flex-wrap: wrap; }
+        .tabs { display: flex; gap: 6px; background: var(--mist); padding: 4px; border-radius: 20px; flex-wrap: wrap; }
+        .tab {
+            border: none; background: transparent; font-size: .72rem; font-weight: 600; color: var(--slate);
+            padding: 7px 14px; border-radius: 16px; cursor: pointer; transition: all .15s;
+        }
+        .tab.active { background: var(--ink); color: var(--gold-lt); }
+        .search-box { position: relative; flex: 1; min-width: 180px; max-width: 280px; }
+        .search-box input {
+            width: 100%; padding: 8px 12px 8px 32px; border: 1px solid #E8E6E0; border-radius: 20px;
+            font-size: .76rem; font-family: var(--font-body); color: var(--ink); background: var(--mist);
+        }
+        .search-box input:focus { outline: none; border-color: var(--gold); background: var(--white); }
+        .search-box::before { content: '🔍'; position: absolute; left: 11px; top: 50%; transform: translateY(-50%); font-size: .72rem; opacity: .6; }
+
+        /* ── TABLE ─────────────────────────────── */
+        .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        table { width: 100%; border-collapse: collapse; min-width: 680px; }
+        thead th {
+            font-size: .64rem; letter-spacing: 1px; text-transform: uppercase; color: var(--slate); font-weight: 600;
+            padding: 10px 14px; text-align: left; background: #FAFAF8; border-bottom: 1px solid #F0EDE8; white-space: nowrap;
+        }
+        tbody tr { border-bottom: 1px solid #F5F4F0; transition: background .15s; }
+        tbody tr:hover { background: #FAFAF8; }
+        tbody tr:last-child { border-bottom: none; }
+        td { padding: 11px 14px; font-size: .78rem; color: var(--ink-mid); vertical-align: middle; white-space: nowrap; }
+
+        .user-cell { display: flex; align-items: center; gap: 10px; }
+        .user-avatar {
+            width: 34px; height: 34px; border-radius: 50%; background: var(--ink); color: var(--gold-lt);
+            display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: .72rem;
+            flex-shrink: 0; overflow: hidden; position: relative;
+        }
+        .user-avatar img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+        .user-name { font-weight: 600; color: var(--ink); font-size: .80rem; }
+        .user-email { font-size: .68rem; color: var(--slate); }
+
+        .badge { display: inline-flex; align-items: center; gap: 5px; font-size: .65rem; font-weight: 700; padding: 4px 10px; border-radius: 12px; letter-spacing: .3px; }
+        .badge .dot { width: 6px; height: 6px; }
+        .badge-active   { background: #D4EDDA; color: #155724; }
+        .badge-inactive { background: #F8D7DA; color: #721C24; }
+        .badge-warn     { background: #FFF3CD; color: #856404; }
+        .dot.warn { background: #C9A84C; }
+
+        /* ── ROOM CELL ─────────────────────────── */
+        .room-cell .rname { font-weight: 600; color: var(--ink); font-size: .80rem; }
+        .room-cell .rmeta { font-size: .68rem; color: var(--slate); }
+        .amount-val { font-weight: 700; color: var(--ink); }
+
+        .empty-state { text-align: center; padding: 40px 20px; color: var(--slate); font-size: .82rem; }
+
+        /* ── FOOTER ───────────────────────────── */
+        .footer { text-align: center; padding: 14px; font-size: .68rem; color: var(--slate); border-top: 1px solid #E8E6E0; background: var(--white); margin-bottom: 56px; }
+
+        /* ── BOTTOM NAV ───────────────────────── */
+        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: var(--ink); z-index: 80; padding: 6px 0 max(8px, env(safe-area-inset-bottom)); border-top: 1px solid rgba(201,168,76,.20); }
+        .bottom-nav-inner { display: flex; justify-content: space-around; }
+        .bn-item {
+            display: flex; flex-direction: column; align-items: center; gap: 3px; color: #7070A0; font-size: .58rem;
+            font-weight: 600; letter-spacing: .4px; text-transform: uppercase; cursor: pointer; padding: 6px 10px;
+            border-radius: var(--radius-sm); transition: color .15s; text-decoration: none; min-width: 52px; min-height: 44px; justify-content: center;
+        }
+        .bn-item .bn-icon { font-size: 1.3rem; }
+        .bn-item.active, .bn-item:hover { color: var(--gold); }
+
+        /* ── DESKTOP (≥ 769px) ────────────────── */
+        @media (min-width: 769px) {
+            .sidebar { transform: translateX(0); }
+            .main { margin-left: var(--sidebar-w); }
+            .hamburger { display: none; }
+            .bottom-nav { display: none; }
+            .overlay { display: none !important; }
+            .content { padding: 28px 32px 40px; }
+            .stats-grid { grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 28px; }
+            .stat-value { font-size: 2.2rem; }
+            .topbar { padding: 14px 32px; }
+            .topbar-title { font-size: 1.25rem; }
+            .footer { margin-bottom: 0; }
+            .card { margin-bottom: 0; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="overlay" id="overlay" onclick="closeSidebar()"></div>
+
+<!-- ── SIDEBAR ────────────────────────────── -->
+<nav class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+        <div>
+            <div class="brand">XansaStays</div>
+            <div class="tagline">Admin Portal</div>
+        </div>
+        <button class="sidebar-close" onclick="closeSidebar()">✕</button>
+    </div>
+
+    <div class="nav-section">
+        <div class="nav-label">Overview</div>
+        <a class="nav-item" th:href="@{/adminDashboard}"><span class="icon">🏠</span> Dashboard</a>
+    </div>
+    <div class="nav-section">
+        <div class="nav-label">Management</div>
+        <a class="nav-item" th:href="@{/adminUsers}"><span class="icon">👤</span> Guests</a>
+        <a class="nav-item" href="#" onclick="closeSidebar()"><span class="icon">🛏️</span> Rooms</a>
+        <a class="nav-item" href="#" onclick="closeSidebar()"><span class="icon">📋</span> Bookings</a>
+        <a class="nav-item active" th:href="@{/admin/checkouts}"><span class="icon">🚪</span> Checkout</a>
+    </div>
+    <div class="nav-section">
+        <div class="nav-label">Guests &amp; Service</div>
+        <a class="nav-item" href="#" onclick="closeSidebar()"><span class="icon">🛎️</span> Room Service</a>
+        <a class="nav-item" href="#" onclick="closeSidebar()"><span class="icon">⭐</span> Reviews</a>
+    </div>
+
+    <div class="sidebar-bottom">
+        <div class="admin-chip">
+            <div class="avatar">AD</div>
+            <div class="admin-info">
+                <div class="name">Admin</div>
+                <div class="role">Super Admin</div>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<!-- ── MAIN ───────────────────────────────── -->
+<div class="main">
+
+    <!-- TOPBAR -->
+    <div class="topbar">
+        <div class="topbar-left">
+            <button class="hamburger" onclick="openSidebar()" aria-label="Menu">
+                <span></span><span></span><span></span>
+            </button>
+            <div class="topbar-title">Checkout</div>
+        </div>
+        <div class="topbar-meta">
+            <div class="notif">🔔<span class="notif-dot"></span></div>
+        </div>
+    </div>
+
+    <!-- CONTENT -->
+    <div class="content">
+
+        <div class="page-head">
+            <h1>Checkout Management</h1>
+            <p>All bookings with their payment and checkout status</p>
+        </div>
+
+        <!-- STATS -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label"><span class="dot total"></span> Total Bookings</div>
+                <div class="stat-value" th:text="${totalBookings}">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label"><span class="dot active"></span> Paid</div>
+                <div class="stat-value" th:text="${paidCount}">0</div>
+                <div class="stat-sub" th:text="${paidPct} + '%'">0%</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label"><span class="dot warn"></span> Pending Payment</div>
+                <div class="stat-value" th:text="${pendingCount}">0</div>
+                <div class="stat-sub" th:text="${pendingPct} + '%'">0%</div>
+            </div>
+        </div>
+
+        <!-- BOOKINGS / CHECKOUT TABLE -->
+        <div class="card">
+            <div class="card-header">
+                <div>
+                    <div class="card-title">All Bookings</div>
+                    <div class="card-sub" th:text="${totalBookings} + ' total'">0 total</div>
+                </div>
+            </div>
+
+            <div class="toolbar">
+                <div class="tabs">
+                    <button class="tab active" onclick="filterBookings('all', this)">All</button>
+                    <button class="tab" onclick="filterBookings('paid', this)">Paid</button>
+                    <button class="tab" onclick="filterBookings('pending', this)">Pending</button>
+                </div>
+                <div class="search-box">
+                    <input type="text" id="checkoutSearch" placeholder="Search guest, room, booking ID..." onkeyup="searchBookings()" />
+                </div>
+            </div>
+
+            <div class="table-wrap">
+                <table id="checkoutsTable">
+                    <thead>
+                    <tr>
+                        <th>Booking</th>
+                        <th>Room</th>
+                        <th>Check-in</th>
+                        <th>Check-out</th>
+                        <th>Amount</th>
+                        <th>Payment</th>
+                        <th>Status</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="booking : ${bookings}"
+                        th:data-status="${booking.paymentStatus != null and booking.paymentStatus.name() == 'PAID'} ? 'paid' : 'pending'"
+                        th:data-search="${#strings.toLowerCase(
+                            (booking.guest != null ? booking.guest.name : '') + ' ' +
+                            (booking.room != null ? booking.room.name : '') + ' ' +
+                            'xs-' + booking.bookingId)}">
+
+                        <td>
+                            <div class="user-cell">
+                                <div class="user-avatar">
+                                    <span th:text="${booking.guest != null and !#strings.isEmpty(booking.guest.name) ? #strings.substring(booking.guest.name,0,1) : '?'}">A</span>
+                                    <img th:if="${booking.guest != null and booking.guest.profilePic != null and !#strings.isEmpty(booking.guest.profilePic)}"
+                                         th:src="${booking.guest.profilePic}" alt="avatar"
+                                         onerror="this.style.display='none';" />
+                                </div>
+                                <div>
+                                    <div class="user-name" th:text="${booking.guest != null ? booking.guest.name : 'Guest'}">Name</div>
+                                    <div class="user-email" th:text="'#XS-' + ${booking.bookingId}">#XS-10482</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="room-cell">
+                                <div class="rname" th:text="${booking.room != null ? booking.room.name : '—'}">Executive Suite</div>
+                                <div class="rmeta" th:text="${booking.room != null ? 'Room No. ' + booking.room.roomNumber : ''}">Room No. 214</div>
+                            </div>
+                        </td>
+                        <td th:text="${booking.checkin != null} ? ${#temporals.format(booking.checkin, 'dd MMM yyyy')} : '—'">—</td>
+                        <td th:text="${booking.checkout != null} ? ${#temporals.format(booking.checkout, 'dd MMM yyyy')} : '—'">—</td>
+                        <td class="amount-val" th:text="${booking.totalAmount != null} ? '₹' + ${#numbers.formatDecimal(booking.totalAmount, 0, 'COMMA', 0, 'POINT')} : '—'">₹0</td>
+                        <td>
+                            <span class="badge badge-active" th:if="${booking.paymentStatus != null and booking.paymentStatus.name() == 'PAID'}">
+                                <span class="dot active"></span> Paid
+                            </span>
+                            <span class="badge badge-warn" th:unless="${booking.paymentStatus != null and booking.paymentStatus.name() == 'PAID'}">
+                                <span class="dot warn"></span> Pending
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge badge-active" th:if="${booking.status != null and booking.status.name() == 'CONFIRMED'}">
+                                <span class="dot active"></span> Confirmed
+                            </span>
+                            <span class="badge badge-inactive" th:if="${booking.status != null and booking.status.name() == 'CANCELLED'}">
+                                <span class="dot inactive"></span> Cancelled
+                            </span>
+                            <span class="badge badge-warn" th:unless="${booking.status != null and (booking.status.name() == 'CONFIRMED' or booking.status.name() == 'CANCELLED')}">
+                                <span class="dot warn"></span> Pending
+                            </span>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+
+                <div class="empty-state" th:if="${#lists.isEmpty(bookings)}">
+                    No bookings found yet.
+                </div>
+            </div>
+        </div>
+
+    </div><!-- /content -->
+
+    <div class="footer">XansaStays Admin Portal &nbsp;·&nbsp; © 2026</div>
+</div>
+
+<!-- ── BOTTOM NAV ──────────────────────────── -->
+<nav class="bottom-nav">
+    <div class="bottom-nav-inner">
+        <a class="bn-item" th:href="@{/adminDashboard}"><span class="bn-icon">🏠</span>Home</a>
+        <a class="bn-item" href="#"><span class="bn-icon">📋</span>Bookings</a>
+        <a class="bn-item" th:href="@{/adminUsers}"><span class="bn-icon">👤</span>Guests</a>
+        <a class="bn-item active" th:href="@{/admin/checkouts}"><span class="bn-icon">🚪</span>Checkout</a>
+        <a class="bn-item" onclick="openSidebar()"><span class="bn-icon">☰</span>More</a>
+    </div>
+</nav>
+
+
+<script>
+    function openSidebar() {
+        document.getElementById('sidebar').classList.add('open');
+        document.getElementById('overlay').classList.add('open');
+    }
+    function closeSidebar() {
+        document.getElementById('sidebar').classList.remove('open');
+        document.getElementById('overlay').classList.remove('open');
+    }
+
+    function filterBookings(status, btn) {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        btn.classList.add('active');
+        const rows = document.querySelectorAll('#checkoutsTable tbody tr');
+        rows.forEach(row => {
+            const rowStatus = row.getAttribute('data-status');
+            row.style.display = (status === 'all' || rowStatus === status) ? '' : 'none';
+        });
+        searchBookings();
+    }
+
+    function searchBookings() {
+        const term = document.getElementById('checkoutSearch').value.toLowerCase().trim();
+        const activeTab = document.querySelector('.tab.active').textContent.trim().toLowerCase();
+        const rows = document.querySelectorAll('#checkoutsTable tbody tr');
+        rows.forEach(row => {
+            const matchesSearch = row.getAttribute('data-search').includes(term);
+            const matchesTab = activeTab === 'all' || row.getAttribute('data-status') === activeTab;
+            row.style.display = (matchesSearch && matchesTab) ? '' : 'none';
+        });
+    }
+
+</script>
+
+</body>
+</html>

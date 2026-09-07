@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gallery – Xansa Stay</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="stylesheet" href="/css/home.css">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Inter', system-ui, sans-serif; background: #f7f8f6; color: #1c2b1e; }
+
+        .gallery-hero {
+            background-color: var(--clr-brand);
+            padding: 2.5rem 32px 3rem;
+        }
+        .gallery-breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 1.5rem;
+            font-size: 0.9375rem;
+            color: rgba(255,255,255,0.6);
+        }
+        .gallery-breadcrumb a {
+            color: rgba(255,255,255,0.6);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        .gallery-breadcrumb a:hover { color: #ffffff; }
+        .gallery-breadcrumb span { color: rgba(255,255,255,0.85); }
+        .gallery-title {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(2rem, 4vw, 2.75rem);
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 10px;
+        }
+        .gallery-tagline {
+            font-size: 0.9375rem;
+            line-height: 1.6;
+            color: rgba(255,255,255,0.6);
+        }
+
+        .gallery-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 16px 32px; background: #ffffff;
+            border-bottom: 1px solid #e2e6e2;
+            position: sticky;
+            top: var(--nav-height);
+            z-index: 100;
+        }
+        .gallery-header-left { display: flex; align-items: center; gap: 14px; }
+        .back-btn {
+            background: none; border: none; cursor: pointer; font-size: 22px;
+            color: #1c2b1e; display: flex; align-items: center; padding: 4px;
+            border-radius: 6px; transition: background 0.15s;
+        }
+        .back-btn:hover { background: #f0f0f0; }
+        .gallery-hotel-name {
+            font-family: 'Playfair Display', serif; font-size: 1.5rem;
+            font-weight: 700; color: #1c2b1e;
+        }
+        .btn-select-room {
+            background: #3d5240; color: #ffffff; border: none;
+            padding: 12px 28px; border-radius: 8px; font-size: 13px;
+            font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase;
+            cursor: pointer; transition: background 0.2s;
+        }
+        .btn-select-room:hover { background: #5a7a62; }
+
+        .category-nav {
+            display: flex; align-items: center; gap: 0; padding: 0 32px;
+            background: #ffffff; border-bottom: 1.5px solid #e2e6e2;
+            overflow-x: auto; scrollbar-width: none;
+        }
+        .category-nav::-webkit-scrollbar { display: none; }
+        .cat-tab {
+            padding: 16px 20px; font-size: 16px; font-weight: 500;
+            color: #6b7e6d; cursor: pointer; border: none; background: none;
+            white-space: nowrap; border-bottom: 2.5px solid transparent;
+            margin-bottom: -1.5px; transition: color 0.15s, border-color 0.15s;
+        }
+        .cat-tab.active { color: #3d5240; font-weight: 600; border-bottom-color: #3d5240; }
+        .cat-tab:hover:not(.active) { color: #1c2b1e; }
+
+        .gallery-body { padding: 28px 32px; max-width: 1300px; margin: 0 auto; }
+
+        .gallery-section {
+            background: #ffffff; border-radius: 14px; padding: 28px;
+            margin-bottom: 24px; border: 1px solid #e2e6e2;
+        }
+        .gallery-section-title {
+            font-family: 'Playfair Display', serif; font-size: 1.25rem;
+            font-weight: 700; color: #1c2b1e; margin-bottom: 20px;
+        }
+
+        .photo-grid {
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px;
+        }
+        .photo-grid.large { grid-template-columns: repeat(4, 1fr); }
+        .photo-grid .photo-item:nth-child(n+5) { display: none; }
+        .photo-grid.expanded .photo-item { display: block; }
+
+        .more-overlay {
+            position: absolute; inset: 0;
+            background: rgba(0,0,0,0.55);
+            color: #fff; display: flex; align-items: center; justify-content: center;
+            font-family: 'Playfair Display', serif;
+            font-size: 1.5rem; font-weight: 700; cursor: pointer;
+        }
+
+        .photo-item {
+            border-radius: 10px; overflow: hidden; cursor: pointer;
+            position: relative; aspect-ratio: 16/10; background: #e8ebe8;
+        }
+        .photo-item img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.35s ease; display: block; }
+        .photo-item:hover img { transform: scale(1.05); }
+
+        /* Video thumbnail — resizes any video, no matter its native ratio,
+           to fit fully inside the box without zooming or cropping. */
+        .photo-item .thumb-video {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            background: #000;
+            display: block;
+        }
+
+        .photo-item .overlay {
+            position: absolute; inset: 0; background: rgba(0,0,0,0);
+            transition: background 0.25s; display: flex;
+            align-items: center; justify-content: center;
+        }
+        .photo-item:hover .overlay { background: rgba(0,0,0,0.22); }
+        .overlay-icon { opacity: 0; color: #fff; font-size: 2rem; transition: opacity 0.25s; }
+        .photo-item:hover .overlay-icon { opacity: 1; }
+
+        .video-badge {
+            position: absolute; bottom: 10px; left: 10px;
+            background: rgba(0,0,0,0.55); color: #fff; font-size: 11px;
+            font-weight: 600; padding: 4px 10px; border-radius: 20px;
+            display: flex; align-items: center; gap: 5px;
+        }
+        .photo-placeholder {
+            width: 100%; height: 100%; display: flex; align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #d8e0d8 0%, #c2cfc3 100%);
+            color: #6b7e6d; font-size: 2.5rem;
+        }
+
+        /* ============ LIGHTBOX ============ */
+        .lightbox {
+            display: none; position: fixed; inset: 0;
+            background: rgba(0,0,0,0.92); z-index: 999;
+            flex-direction: column;
+            align-items: center; justify-content: center;
+        }
+        .lightbox.open { display: flex; }
+
+        .lightbox-main {
+            position: relative;
+            width: 100%;
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 0;
+            touch-action: pan-y;
+        }
+        .lightbox-img {
+            max-width: 88vw; max-height: 78vh; border-radius: 10px;
+            object-fit: contain; user-select: none; -webkit-user-drag: none;
+        }
+
+        .lightbox-close {
+            position: absolute; top: 20px; right: 24px; z-index: 3;
+            background: rgba(255,255,255,0.15); border: none; color: #fff;
+            font-size: 22px; width: 42px; height: 42px; border-radius: 50%;
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+        }
+        .lightbox-close:hover { background: rgba(255,255,255,0.28); }
+
+        .lightbox-nav {
+            position: absolute; top: 50%; transform: translateY(-50%);
+            background: rgba(255,255,255,0.15); border: none; color: #fff;
+            font-size: 20px; width: 46px; height: 46px; border-radius: 50%;
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+            z-index: 3; transition: background 0.2s;
+        }
+        .lightbox-nav:hover { background: rgba(255,255,255,0.3); }
+        .lightbox-prev { left: 16px; }
+        .lightbox-next { right: 16px; }
+        @media (max-width: 640px) {
+            .lightbox-nav { width: 38px; height: 38px; font-size: 16px; }
+            .lightbox-prev { left: 8px; }
+            .lightbox-next { right: 8px; }
+        }
+
+        .lightbox-thumbs {
+            display: flex; gap: 10px; padding: 14px 20px;
+            overflow-x: auto; max-width: 92vw;
+            scrollbar-width: thin;
+        }
+        .lightbox-thumb {
+            flex: 0 0 auto; width: 72px; height: 52px; border-radius: 6px;
+            overflow: hidden; cursor: pointer; opacity: 0.5;
+            border: 2px solid transparent; transition: opacity 0.2s, border-color 0.2s;
+            background: #000; display: flex; align-items: center; justify-content: center;
+            color: #fff; font-size: 14px;
+        }
+        .lightbox-thumb img { width: 100%; height: 100%; object-fit: cover; }
+        .lightbox-thumb.active { opacity: 1; border-color: #fff; }
+        .lightbox-thumb:hover { opacity: 0.85; }
+    </style>
+</head>
+<body>
+
+<nav th:replace="~{navbar :: navbar}"></nav>
+
+<!-- HERO -->
+<div class="gallery-hero">
+    <div class="gallery-breadcrumb">
+        <a th:href="@{/home}">Home</a> <span>&rsaquo;</span> <span>Gallery</span>
+    </div>
+    <div class="gallery-title">Gallery</div>
+    <div class="gallery-tagline">A closer look at our rooms, spaces, and experiences.</div>
+</div>
+
+<!-- TOP HEADER -->
+<div class="gallery-header">
+    <div class="gallery-header-left">
+        <button class="back-btn" onclick="history.back()">
+            <i class="fa fa-arrow-left"></i>
+        </button>
+        <span class="gallery-hotel-name">Xansa Stay</span>
+    </div>
+    <button class="btn-select-room" onclick="window.location.href='/rooms'">SELECT ROOM</button>
+</div>
+
+<!-- CATEGORY NAV -->
+<div class="category-nav">
+    <button class="cat-tab active"  onclick="switchCategory(this, 'all')">All</button>
+    <button class="cat-tab"         onclick="switchCategory(this, 'videos')">Videos</button>
+    <button class="cat-tab"         onclick="switchCategory(this, 'room')">Room</button>
+    <button class="cat-tab"         onclick="switchCategory(this, 'outdoors')">Outdoors</button>
+    <button class="cat-tab"         onclick="switchCategory(this, 'Lobby')">Lobby</button>
+    <button class="cat-tab"         onclick="switchCategory(this, 'pool')">Swimming Pool</button>
+    <button class="cat-tab"         onclick="switchCategory(this, 'entrance')">Entrance</button>
+    <button class="cat-tab"         onclick="switchCategory(this, 'reception')">Reception</button>
+    <button class="cat-tab"         onclick="switchCategory(this, 'common')">Common Area</button>
+    <button class="cat-tab"         onclick="switchCategory(this, 'restaurant')">Restaurant</button>
+    <button class="cat-tab"         onclick="switchCategory(this, 'garden')">Garden</button>
+</div>
+
+<!-- GALLERY BODY -->
+<div class="gallery-body">
+
+    <div class="gallery-section" data-cat="videos">
+        <div class="gallery-section-title">Videos</div>
+        <div class="photo-grid large">
+            <div class="photo-item" onclick="openLightbox(this)">
+                <video class="thumb-video" src="/images/videos/video_thumb_2.mp4" muted autoplay loop playsinline preload="metadata"></video>
+                <div class="overlay"><i class="fa fa-play overlay-icon"></i></div>
+                <div class="video-badge"><i class="fa fa-video"></i> Video</div>
+            </div>
+            <div class="photo-item" onclick="openLightbox(this)">
+                <video class="thumb-video" src="/images/videos/video_thumb_4.mp4" muted autoplay loop playsinline preload="metadata"></video>
+                <div class="overlay"><i class="fa fa-play overlay-icon"></i></div>
+                <div class="video-badge"><i class="fa fa-video"></i> Video</div>
+            </div>
+            <div class="photo-item" onclick="openLightbox(this)">
+                <video class="thumb-video" src="/images/videos/video_thumb_5.mp4" muted autoplay loop playsinline preload="metadata"></video>
+                <div class="overlay"><i class="fa fa-play overlay-icon"></i></div>
+                <div class="video-badge"><i class="fa fa-video"></i> Video</div>
+            </div>
+            <div class="photo-item" onclick="openLightbox(this)">
+                <video class="thumb-video" src="/images/videos/video_thumb_1.mp4" muted autoplay loop playsinline preload="metadata"></video>
+                <div class="overlay"><i class="fa fa-play overlay-icon"></i></div>
+                <div class="video-badge"><i class="fa fa-video"></i> Video</div>
+            </div>
+            <div class="photo-item" onclick="openLightbox(this)">
+                <video class="thumb-video" src="/images/videos/video_thumb_6.mp4" muted autoplay loop playsinline preload="metadata"></video>
+                <div class="overlay"><i class="fa fa-play overlay-icon"></i></div>
+                <div class="video-badge"><i class="fa fa-video"></i> Video</div>
+            </div>
+            <div class="photo-item" onclick="openLightbox(this)">
+                <video class="thumb-video" src="/images/videos/video_thumb_3.mp4" muted autoplay loop playsinline preload="metadata"></video>
+                <div class="overlay"><i class="fa fa-play overlay-icon"></i></div>
+                <div class="video-badge"><i class="fa fa-video"></i> Video</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Room -->
+    <div class="gallery-section" data-cat="room">
+        <div class="gallery-section-title">Room</div>
+        <div class="photo-grid">
+            <div class="photo-item" onclick="openLightbox(this)">
+                <img src="/images/Gallary/img.png" alt="Room 1">
+                <div class="overlay"><i class="fa fa-expand overlay-icon"></i></div>
+            </div>
+            <div class="photo-item" onclick="openLightbox(this)">
+                <img src="/images/Gallary/img_1.png" alt="Room 2">
+                <div class="overlay"><i class="fa fa-expand overlay-icon"></i></div>
+            </div>
+            <div class="photo-item" onclick="openLightbox(this)">
+                <img src="/images/Gallary/img_2.png" alt="Room 3">
+                <div class="overlay"><i class="fa fa-expand overlay-icon"></i></div>
+            </div>
+            <div class="photo-item" onclick="openLightbox(this)">
+                <img src="/images/Gallary/img_3.png" alt="Room 4">
+                <div class="overlay"><i class="fa fa-expand overlay-icon"></i></div>
+            </div>
+            <div class="photo-item" onclick="openLightbox(this)">
+                <img src="/images/Gallary/img_4.png" alt="Room 5">
+                <div class="overlay"><i class="fa fa-expand overlay-icon"></i></div>
+            </div>
+            <div class="photo-item" onclick="openLightbox(this)">
+                <img src="/images/Gallary/img_5.png" alt="Room 6">
+                <div class="overlay"><i class="fa fa-expand overlay-icon"></i></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Outdoors -->
+    <div class="gallery-section" data-cat="outdoors">
+        <div class="gallery-section-title">Outdoors</div>
+        <div class="photo-grid">
+            <div class="photo-item" onclick="openLightbox(this)">
+                <img src="/images/Gallary/Out1.png" alt="Outdoors 1">
+                <div class="overlay"><i class="fa fa-expand overlay-icon"></i></div>
+            </div>
+            <div class="photo-item" onclick="openLightbox(this)">
+                <img src="/images/Gallary/Out2.png" alt="Outdoors 2">
+                <div class="overlay"><i class="fa fa-expand overlay-icon"></i></div>
+            </div>
+            <div class="photo-item" onclick="openLightbox(this)">
+                <img src="/images/Gallary/Out3.png" alt="Outdoors 3">
+                <div class="overlay"><i class="fa fa-expand overlay-icon"></i></div>
+            </div>
+            <div class="photo-item" onclick="openLightbox(this)">
+                <img src="/images/Gallary/Out4.png" alt="Outdoors 4">
+                <div class="overlay"><i class="fa fa-expand overlay-icon"></i></div>
+            </div>
+            <div class="photo-item" onclick="openLightbox(this)">
+                <img src="/images/Gallary/Out5.png" alt="Outdoors 5">
+                <div class="overlay"><i class="fa fa-expand overlay-icon"></i></div>
+            </div>
+            <div class="photo-item" onclick="openLightbox(this)">
+                <img src="/images/Gallary/Out6.png" alt="Outdoors 6">
+                <div class="overlay"><i class="fa fa-expand overlay-icon"></i></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lobby -->
+    <div class="gallery-section" data-cat="Lobby">
+        <div class="gallery-section-title">Lobby</div>
+        <div class="photo-grid">
+            <div class="photo-item" onclick="openLightbox(this)">
+                <img src="/images/Gallary/lobby6.png" alt="Lobby 1">
+                <div class="overlay"><i class="fa fa-expand overlay-icon"></i></div>
+            </div>
+            <div class="photo-item" onclick="openLightbox(this)">
+                <img src="/images/Gallary/lobby5.png" alt="Lobby 2">
+                <div class="overlay"><i class="fa fa-expand overlay-icon"></i></div>
+            </div>
+            <div class="photo-item" onclick="openLightbox(this)">
+                <img src="/images/Gallary/lobby4.png" alt="Lobby 3">
+                <div class="overlay"><i class="fa fa-expand overlay-icon"></i></div>
+            </div>
+            <div class="photo-item" onclick="openLightbox(this)">
+                <img src="/images/Gallary/lobby3.png" alt="Lobby 4">
+                <div class="overlay"><i class="fa fa-expand overlay-icon"></i></div>
+            </div>
+            <div class="photo-item" onclick="openLightbox(this)">
+                <img src="/images/Gallary/lobby2.png" alt="Lobby 5">
+                <div class="overlay"><i class="fa fa-expand overlay-icon"></i></div>
+            </div>
+            <div class="photo-item" onclick="openLightbox(this)">
+                <img src="/images/Gallary/lobby.png" alt="Lobby 6">
+                <div class="overlay"><i class="fa fa-expand overlay-icon"></i></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Swimming Pool -->
+    <div class="gallery-section" data-cat="pool">
+        <div class="gallery-section-title">Swimming Pool</div>
+        <div class="photo-grid">
+            <div class="photo-item" onclick="openLightbox(this)">
+                <img src="/images/Gallary/swimm.png" alt="Pool 1">
+                <div class="overlay"><i class="fa fa-expand overlay-icon"></i></div>
+            </div>
+            <div class="photo-item" onclick="openLightbox(this)">
+                <img src="/images/Gallary/swimm1.png" alt="Pool 2">
+                <div class="overlay"><i class="fa fa-expand overlay-icon"></i></div>
+            </div>
+            <div class="photo-item" onclick="openLightbox(this)">
+                <img src="/images/Gallary/swimm2.png" alt="Pool 3">
+                <div class="overlay"><i class="fa fa-expand overlay-icon"></i></div>
+            </div>
+            <div class="photo-item" onclick="openLightbox(this)">
+                <img src="/images/Gallary/swimm3.png" alt="Pool 4">
+                <div class="overlay"><i class="fa fa-expand overlay-icon"></i></div>
+            </div>
+            <div class="photo-item" onclick="openLightbox(this)">
+                <img src="/images/Gallary/swimm4.png" alt="Pool 5">
+                <div class="overlay"><i class="fa fa-expand overlay-icon"></i></div>
+            </div>
+            <div class="photo-item" onclick="openLightbox(this)">
+                <img src="/images/Gallary/swimm5.png" alt="Pool 6">
+                <div class="overlay"><i class="fa fa-expand overlay-icon"></i></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Entrance -->
+    <div class="gallery-section" data-cat="entrance">
+        <div class="gallery-section-title">Entrance</div>
+        <div class="photo-grid">
+            <div class="photo-item" onclick="openLightbox(this)">
+                <img src="/images/Gallary/Ent1.png" alt="Entrance 3">
+                <div class="overlay"><i class="fa fa-expand overlay-icon"></i></div>
+            </div>
+            <div class="photo-item" onclick="openLightbox(this)">
+                <img src="/images/Gallary/Ent2.png" alt="Entrance 4">
+                <div class="overlay"><i class="fa fa-expand overlay-icon"></i></div>
+            </div>
+            <div class="photo-item" onclick="openLightbox(this)">
+                <img src="/images/Gallary/Ent3.png" alt="Entrance 5">
+                <div class="overlay"><i class="fa fa-expand overlay-icon"></i></div>
+            </div>
+            <div class="photo-item" onclick="openLightbox(this)">
+                <img src="/images/Gallary/Ent4.png" alt="Entrance 6">
+                <div class="overlay"><i class="fa fa-expand overlay-icon"></i></div>
+            </div>
+            <div class="photo-item" onclick="openLightbox(this)">
+                <img src="/images/Gallary/Ent5.png" alt="Entrance 6">
+                <div class="overlay"><i class="fa fa-expand overlay-icon"></i></div>
+            </div>
+            <div class="photo-item" onclick="openLightbox(this)">
+                <img src="/images/Gallary/Ent6.png" alt="Entrance 6">
+                <div class="overlay"><i class="fa fa-expand overlay-icon"></i></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reception -->
+    <div class="gallery-section" data-cat="reception">
+        <div class="gallery-section-title">Reception</div>
+        <div class="photo-grid">
+            <div class="photo-item" onclick="openLightbox(this)">
+                <img src="/images/Gallary/recp.png" alt="Reception 1">
+                <div class="overlay"><i class="fa fa-expand overlay-icon"></i></div>
+            </div>
+            <div class="photo-item" onclick="openLightbox(this)">
+                <img src="/images/Gallary/recp1.png" alt="Reception 2">
+                <div class="overlay"><i class="fa fa-expand overlay-icon"></i></div>
+            </div>
+            <div class="photo-item" onclick="openLightbox(this)">
+                <img src="/images/Gallary/recp2.png" alt="Reception 3">
+                <div class="overlay"><i class="fa fa-expand overlay-icon"></i></div>
+            </div>
+            <div class="photo-item" onclick="openLightbox(this)">
+                <img src="/images/Gallary/recp3.png" alt="Reception 4">
+                <div class="overlay"><i class="fa fa-expand overlay-icon"></i></div>
+            </div>
+            <div class="photo-item" onclick="openLightbox(this)">
+                <img src="/images/Gallary/recp4.png" alt="Reception 5">
+                <div class="overlay"><i class="fa fa-expand overlay-icon"></i></div>
+            </div>
+            <div class="photo-item" onclick="openLightbox(this)">
+                <img src="/images/Gallary/recp5.png" alt="Reception 6">
+                <div class="overlay"><i class="fa fa-expand overlay-icon"></i></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Common Area -->
+    <div class="gallery-section" data-cat="common">
+        <div class="gallery-section-title">Common Area</div>
+        <div class="photo-grid">
+            <div class="photo-item" onclick="openLightbox(this)">
+                <img src="/images/Gallary/comm.png" alt="Common Area 1">
+                <div class="overlay"><i class="fa fa-expand overlay-icon"></i></div>
+            </div>
+            <div class="photo-item" onclick="openLightbox(this)">
+                <img src="/images/Gallary/comm1.png" alt="Common Area 2">
+                <div class="overlay"><i class="fa fa-expand overlay-icon"></i></div>
+            </div>
+            <div class="photo-item" onclick="openLightbox(this)">
+                <img src="/images/Gallary/comm2.png" alt="Common Area 3">
+                <div class="overlay"><i class="fa fa-expand overlay-icon"></i></div>
+            </div>
+            <div class="photo-item" onclick="openLightbox(this)">
+                <img src="/images/Gallary/comm3.png" alt="Common Area 4">
+                <div class="overlay"><i class="fa fa-expand overlay-icon"></i></div>
+            </div>
+            <div class="photo-item" onclick="openLightbox(this)">
+                <img src="/images/Gallary/comm4.png" alt="Common Area 5">
+                <div class="overlay"><i class="fa fa-expand overlay-icon"></i></div>
+            </div>
+            <div class="photo-item" onclick="openLightbox(this)">
+                <img src="/images/Gallary/comm5.png" alt="Common Area 6">
+                <div class="overlay"><i class="fa fa-expand overlay-icon"></i></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Restaurant -->
+    <div class="gallery-section" data-cat="restaurant">
+        <div class="gallery-section-title">Restaurant</div>
+        <div class="photo-grid">
+            <div class="photo-item" onclick="openLightbox(this)">
+                <img src="/images/Gallary/rest.png" alt="Restaurant 1">
+                <div class="overlay"><i class="fa fa-expand overlay-icon"></i></div>
+            </div>
+            <div class="photo-item" onclick="openLightbox(this)">
+                <img src="/images/Gallary/rest1.png" alt="Restaurant 2">
+                <div class="overlay"><i class="fa fa-expand overlay-icon"></i></div>
+            </div>
+            <div class="photo-item" onclick="openLightbox(this)">
+                <img src="/images/Gallary/rest2.png" alt="Restaurant 3">
+                <div class="overlay"><i class="fa fa-expand overlay-icon"></i></div>
+            </div>
+            <div class="photo-item" onclick="openLightbox(this)">
+                <img src="/images/Gallary/rest3.png" alt="Restaurant 4">
+                <div class="overlay"><i class="fa fa-expand overlay-icon"></i></div>
+            </div>
+            <div class="photo-item" onclick="openLightbox(this)">
+                <img src="/images/Gallary/rest4.png" alt="Restaurant 5">
+                <div class="overlay"><i class="fa fa-expand overlay-icon"></i></div>
+            </div>
+            <div class="photo-item" onclick="openLightbox(this)">
+                <img src="/images/Gallary/rest5.png" alt="Restaurant 6">
+                <div class="overlay"><i class="fa fa-expand overlay-icon"></i></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Garden -->
+    <div class="gallery-section" data-cat="garden">
+        <div class="gallery-section-title">Garden</div>
+        <div class="photo-grid">
+            <div class="photo-item" onclick="openLightbox(this)">
+                <img src="/images/Gallary/gar.png" alt="Garden 1">
+                <div class="overlay"><i class="fa fa-expand overlay-icon"></i></div>
+            </div>
+            <div class="photo-item" onclick="openLightbox(this)">
+                <img src="/images/Gallary/gar1.png" alt="Garden 2">
+                <div class="overlay"><i class="fa fa-expand overlay-icon"></i></div>
+            </div>
+            <div class="photo-item" onclick="openLightbox(this)">
+                <img src="/images/Gallary/gar3.png" alt="Garden 3">
+                <div class="overlay"><i class="fa fa-expand overlay-icon"></i></div>
+            </div>
+            <div class="photo-item" onclick="openLightbox(this)">
+                <img src="/images/Gallary/gar1.png" alt="Garden 4">
+                <div class="overlay"><i class="fa fa-expand overlay-icon"></i></div>
+            </div>
+            <div class="photo-item" onclick="openLightbox(this)">
+                <img src="/images/Gallary/gar3.png" alt="Garden 5">
+                <div class="overlay"><i class="fa fa-expand overlay-icon"></i></div>
+            </div>
+            <div class="photo-item" onclick="openLightbox(this)">
+                <img src="/images/Gallary/gar.png" alt="Garden 6">
+                <div class="overlay"><i class="fa fa-expand overlay-icon"></i></div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- LIGHTBOX -->
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+    <button class="lightbox-close" onclick="event.stopPropagation(); closeLightbox()">
+        <i class="fa fa-times"></i>
+    </button>
+    <button class="lightbox-nav lightbox-prev" onclick="event.stopPropagation(); navigateLightbox(-1)">
+        <i class="fa fa-chevron-left"></i>
+    </button>
+    <button class="lightbox-nav lightbox-next" onclick="event.stopPropagation(); navigateLightbox(1)">
+        <i class="fa fa-chevron-right"></i>
+    </button>
+
+    <div class="lightbox-main" id="lightboxMain" onclick="event.stopPropagation()">
+        <img class="lightbox-img" id="lightboxImg" src="" alt="Gallery Image">
+        <video class="lightbox-img" id="lightboxVideo" controls autoplay style="display:none;"></video>
+    </div>
+
+    <div class="lightbox-thumbs" id="lightboxThumbs" onclick="event.stopPropagation()"></div>
+</div>
+
+<script>
+    function switchCategory(btn, cat) {
+        document.querySelectorAll('.cat-tab').forEach(t => t.classList.remove('active'));
+        btn.classList.add('active');
+        document.querySelectorAll('.gallery-section').forEach(sec => {
+            sec.style.display = (cat === 'all' || sec.getAttribute('data-cat') === cat) ? 'block' : 'none';
+        });
+    }
+
+    // ---------- LIGHTBOX WITH SWIPE + THUMBNAIL STRIP ----------
+    let currentGallery = [];
+    let currentIndex = 0;
+
+    function collectGalleryItems(section) {
+        const items = section.querySelectorAll('.photo-item');
+        const gallery = [];
+        items.forEach(item => {
+            const video = item.querySelector('video');
+            const img = item.querySelector('img');
+            if (video) {
+                gallery.push({ src: video.getAttribute('src'), type: 'video' });
+            } else if (img) {
+                gallery.push({ src: img.src, type: 'image' });
+            }
+        });
+        return gallery;
+    }
+
+    function openLightbox(itemEl) {
+        const section = itemEl.closest('.gallery-section');
+        const items = Array.from(section.querySelectorAll('.photo-item'));
+        currentGallery = collectGalleryItems(section);
+        currentIndex = items.indexOf(itemEl);
+
+        renderLightbox();
+        document.getElementById('lightbox').classList.add('open');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function renderLightbox() {
+        const entry = currentGallery[currentIndex];
+        const img = document.getElementById('lightboxImg');
+        const video = document.getElementById('lightboxVideo');
+
+        if (entry.type === 'video') {
+            img.style.display = 'none';
+            img.src = '';
+            video.src = entry.src;
+            video.style.display = 'block';
+            video.play();
+        } else {
+            video.pause();
+            video.removeAttribute('src');
+            video.load();
+            video.style.display = 'none';
+            img.src = entry.src;
+            img.style.display = 'block';
+        }
+
+        renderThumbs();
+    }
+
+    function renderThumbs() {
+        const strip = document.getElementById('lightboxThumbs');
+        strip.innerHTML = '';
+
+        currentGallery.forEach((entry, idx) => {
+            const thumb = document.createElement('div');
+            thumb.className = 'lightbox-thumb' + (idx === currentIndex ? ' active' : '');
+
+            if (entry.type === 'video') {
+                thumb.innerHTML = '<i class="fa fa-play"></i>';
+            } else {
+                const im = document.createElement('img');
+                im.src = entry.src;
+                thumb.appendChild(im);
+            }
+
+            thumb.addEventListener('click', function (e) {
+                e.stopPropagation();
+                currentIndex = idx;
+                renderLightbox();
+            });
+
+            strip.appendChild(thumb);
+        });
+
+        const activeThumb = strip.querySelector('.active');
+        if (activeThumb) {
+            activeThumb.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' });
+        }
+    }
+
+    function navigateLightbox(direction) {
+        if (currentGallery.length === 0) return;
+        currentIndex = (currentIndex + direction + currentGallery.length) % currentGallery.length;
+        renderLightbox();
+    }
+
+    function closeLightbox() {
+        const video = document.getElementById('lightboxVideo');
+        video.pause();
+        video.removeAttribute('src');
+        video.load();
+        document.getElementById('lightbox').classList.remove('open');
+        document.body.style.overflow = '';
+    }
+
+    document.addEventListener('keydown', function (e) {
+        if (!document.getElementById('lightbox').classList.contains('open')) return;
+        if (e.key === 'Escape') closeLightbox();
+        if (e.key === 'ArrowLeft') navigateLightbox(-1);
+        if (e.key === 'ArrowRight') navigateLightbox(1);
+    });
+
+    // ---- Swipe support (touch) ----
+    let touchStartX = 0;
+    let touchStartY = 0;
+
+    const lightboxMain = document.getElementById('lightboxMain');
+
+    lightboxMain.addEventListener('touchstart', function (e) {
+        touchStartX = e.changedTouches[0].screenX;
+        touchStartY = e.changedTouches[0].screenY;
+    }, { passive: true });
+
+    lightboxMain.addEventListener('touchend', function (e) {
+        const touchEndX = e.changedTouches[0].screenX;
+        const touchEndY = e.changedTouches[0].screenY;
+        const diffX = touchEndX - touchStartX;
+        const diffY = touchEndY - touchStartY;
+
+        // Only treat as swipe if horizontal movement dominates (avoids
+        // hijacking vertical scroll gestures on mobile).
+        if (Math.abs(diffX) > 50 && Math.abs(diffX) > Math.abs(diffY)) {
+            if (diffX > 0) {
+                navigateLightbox(-1); // swipe right -> previous
+            } else {
+                navigateLightbox(1);  // swipe left -> next
+            }
+        }
+    }, { passive: true });
+
+    // Show only 4 photos per row; if a section has more, show "+N" on the 4th
+    // photo — click it to reveal the rest of that section's photos.
+    function setupMoreOverlays() {
+        document.querySelectorAll('.photo-grid').forEach(function (grid) {
+            const items = grid.querySelectorAll('.photo-item');
+            if (items.length > 4) {
+                const fourth = items[3];
+                const remaining = items.length - 4;
+                const overlay = document.createElement('div');
+                overlay.className = 'more-overlay';
+                overlay.textContent = '+' + remaining;
+                overlay.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    grid.classList.add('expanded');
+                    overlay.remove();
+                });
+                fourth.appendChild(overlay);
+            }
+        });
+    }
+    document.addEventListener('DOMContentLoaded', setupMoreOverlays);
+</script>
+
+</body>
+</html>

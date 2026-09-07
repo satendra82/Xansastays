@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Booking Confirmed – Xansa Stay</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="stylesheet" href="/css/home.css">
+    <style>
+        body { background: #eef1ee; font-family: 'Inter', sans-serif; }
+
+        nav {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+            height: 84px; display: flex; align-items: center;
+            justify-content: space-between; padding: 4px 5rem;
+            background: white; border-bottom: 1px solid #e2e6e2;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+        }
+        .logo { display: flex; align-items: center; height: 100%; }
+        .logo img { height: 70px; object-fit: contain; }
+        .nav-links { display: flex; gap: 2rem; }
+        .nav-links a { font-size: 0.875rem; font-weight: 600; color: #6b7e6d; text-decoration: none; }
+        .nav-links a:hover { color: #3d5240; }
+        .nav-right { display: flex; align-items: center; gap: 1rem; }
+        .profile-dropdown-wrapper { position: relative; cursor: pointer; }
+        .profile-trigger { display: flex; align-items: center; gap: 10px; padding: 6px 12px; border-radius: 12px; border: 1px solid #e2e6e2; }
+        .profile-trigger:hover { background: #f7f8f6; }
+        .profile-info { display: flex; flex-direction: column; align-items: flex-end; }
+        .profile-name { font-size: 0.875rem; font-weight: 600; }
+        .profile-role { font-size: 0.7rem; color: #6b7e6d; }
+        .profile-avatar { width: 38px; height: 38px; border-radius: 50%; background: #c9a84c; border: 2px solid #3d5240; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.9rem; color: #3d5240; }
+        .profile-dropdown { display: none; position: absolute; right: 0; top: calc(100% + 10px); background: white; border-radius: 18px; box-shadow: 0 20px 60px rgba(0,0,0,0.16); min-width: 210px; z-index: 9999; overflow: hidden; border: 1px solid #e2e6e2; }
+        .profile-dropdown.show { display: block; }
+        .dropdown-header { display: flex; align-items: center; gap: 12px; padding: 1rem 1.25rem; border-bottom: 1px solid #e2e6e2; background: #f7f8f6; }
+        .dh-name { font-size: 0.9rem; font-weight: 600; }
+        .dh-email { font-size: 0.75rem; color: #6b7e6d; }
+        .profile-dropdown a { display: flex; align-items: center; gap: 10px; padding: 11px 1.25rem; font-size: 0.875rem; color: #1c2b1e; text-decoration: none; transition: background 0.2s; }
+        .profile-dropdown a:hover { background: #f7f8f6; color: #3d5240; }
+        .logout-link { color: #e24b4a !important; }
+
+        /* ── Confirm Page ── */
+        .confirm-page {
+            padding: calc(84px + 3rem) 2rem 5rem;
+            max-width: 1120px;
+            margin: 0 auto;
+        }
+
+        /* Two-column layout: main details on the left, sticky summary on the right */
+        .confirm-layout {
+            display: grid;
+            grid-template-columns: 1fr 360px;
+            gap: 1.75rem;
+            align-items: start;
+        }
+        .summary-col {
+            position: sticky;
+            top: calc(84px + 1.5rem);
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+        @media (max-width: 860px) {
+            .confirm-layout { grid-template-columns: 1fr; }
+            .summary-col { position: static; }
+        }
+
+        /* Success animation */
+        .success-wrap {
+            text-align: center;
+            margin-bottom: 2rem;
+            animation: popIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        @keyframes popIn {
+            from { opacity: 0; transform: scale(0.7); }
+            to   { opacity: 1; transform: scale(1); }
+        }
+        /* Medallion / wax-seal style mark instead of a plain tick circle */
+        .tick-circle {
+            position: relative;
+            width: 96px; height: 96px;
+            background: radial-gradient(circle at 32% 28%, #5a7a62, #3d5240 60%);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 1.25rem;
+            box-shadow: 0 12px 40px rgba(61,82,64,0.35), inset 0 0 0 3px rgba(255,255,255,0.12);
+        }
+        .tick-circle::before {
+            content: '';
+            position: absolute;
+            inset: -8px;
+            border-radius: 50%;
+            border: 1.5px dashed rgba(201,168,76,0.55);
+        }
+        .tick-circle::after {
+            content: '';
+            position: absolute;
+            inset: 6px;
+            border-radius: 50%;
+            border: 1px solid rgba(201,168,76,0.4);
+        }
+        .tick-circle i { font-size: 2.25rem; color: #f4e9c9; text-shadow: 0 1px 2px rgba(0,0,0,0.25); }
+        .success-wrap h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 2rem;
+            color: #1c2b1e;
+            margin-bottom: 0.5rem;
+        }
+        .success-wrap p { font-size: 0.9375rem; color: #6b7e6d; }
+
+        /* Booking Card */
+        .confirm-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 8px 40px rgba(0,0,0,0.08);
+            overflow: hidden;
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+
+        /* Card header strip — deep green with a subtle gold foil thread along the top */
+        .confirm-card-header {
+            background: linear-gradient(120deg, #2f4131, #3d5240 55%, #34492f);
+            padding: 1.4rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-radius: 20px 20px 0 0;
+            position: relative;
+        }
+        .confirm-card-header::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 2rem; right: 2rem;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, #c9a84c, transparent);
+            opacity: 0.8;
+        }
+        .confirm-card-header .booking-id {
+            font-size: 0.75rem;
+            color: rgba(255,255,255,0.55);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .confirm-card-header .booking-id strong {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.1rem;
+            letter-spacing: 2px;
+            color: #f4e9c9;
+            margin-left: 8px;
+        }
+        .status-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255,255,255,0.15);
+            border: 1px solid rgba(255,255,255,0.25);
+            color: white;
+            padding: 5px 14px;
+            border-radius: 50px;
+            font-size: 0.8125rem;
+            font-weight: 700;
+        }
+
+        /* Perforated ticket-stub divider between header and body */
+        .ticket-perf {
+            position: relative;
+            height: 20px;
+            background:
+                    radial-gradient(circle 10px at 0 0, transparent 10px, #eef1ee 10.5px),
+                    radial-gradient(circle 10px at 100% 0, transparent 10px, #eef1ee 10.5px);
+            background-color: #34492f;
+        }
+        .ticket-perf::before {
+            content: '';
+            position: absolute;
+            top: 10px; left: 24px; right: 24px;
+            border-top: 2px dashed #d7ddd5;
+        }
+
+        .confirm-body { padding: 2rem; }
+
+        /* Room preview inside confirm */
+        .room-inline {
+            display: flex;
+            gap: 1.25rem;
+            align-items: center;
+            padding: 1.25rem;
+            background: #f7f8f6;
+            border-radius: 14px;
+            margin-bottom: 2rem;
+        }
+        .room-inline-img {
+            width: 90px; height: 70px;
+            border-radius: 10px;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+        .room-inline-img img { width: 100%; height: 100%; object-fit: cover; }
+        .room-inline-name {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #1c2b1e;
+        }
+        .room-inline-meta {
+            font-size: 0.8125rem;
+            color: #6b7e6d;
+            margin-top: 3px;
+        }
+        .room-inline-price {
+            margin-left: auto;
+            font-family: 'Playfair Display', serif;
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #3d5240;
+            text-align: right;
+        }
+        .room-inline-price span {
+            display: block;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.75rem;
+            color: #9aaa9c;
+            font-weight: 400;
+        }
+
+        /* Info Grid */
+        .info-section-title {
+            font-size: 0.6875rem;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: #3d5240;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid #e2e6e2;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.25rem 1.5rem;
+            margin-bottom: 1.75rem;
+        }
+        @media (max-width: 560px) {
+            .info-grid { grid-template-columns: 1fr 1fr; }
+        }
+        .info-item {
+            padding: 0.85rem 1rem;
+            background: #f7f8f6;
+            border: 1px solid #e2e6e2;
+            border-radius: 12px;
+            transition: border-color 0.2s, transform 0.2s;
+        }
+        .info-item:hover { border-color: #c9d6cc; transform: translateY(-2px); }
+        .info-item .lbl {
+            font-size: 0.7rem;
+            font-weight: 600;
+            letter-spacing: 0.4px;
+            text-transform: uppercase;
+            color: #9aaa9c;
+            margin-bottom: 4px;
+        }
+        .info-item .val { font-size: 0.9375rem; font-weight: 700; color: #1c2b1e; }
+
+        /* Total */
+        .total-box {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.25rem 1.5rem;
+            background: #f0f7f2;
+            border-radius: 14px;
+        }
+        .total-box .lbl { font-size: 0.875rem; font-weight: 600; color: #3d5240; }
+        .total-box .amount {
+            font-family: 'Playfair Display', serif;
+            font-size: 2rem;
+            font-weight: 700;
+            color: #3d5240;
+        }
+
+        /* Sidebar cards */
+        .summary-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 8px 40px rgba(0,0,0,0.08);
+            padding: 1.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+        .summary-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, #c9a84c, transparent);
+        }
+        .summary-card .info-section-title { margin-bottom: 1rem; }
+
+        /* Actions */
+        .confirm-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        .btn-action {
+            padding: 14px;
+            border-radius: 12px;
+            font-size: 0.9375rem;
+            font-weight: 700;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            text-align: center;
+            text-decoration: none;
+            border: none;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .btn-primary-action { background: #3d5240; color: white; }
+        .btn-primary-action:hover { background: #4a6350; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(61,82,64,0.3); }
+        .btn-outline-action { background: white; color: #3d5240; border: 2px solid #3d5240; }
+        .btn-outline-action:hover { background: #f0f7f2; }
+
+        /* What's next */
+        .whats-next {
+            background: white;
+            border-radius: 20px;
+            padding: 1.75rem 2rem;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+            position: relative;
+            overflow: hidden;
+        }
+        .whats-next::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, #c9a84c, transparent);
+        }
+        .whats-next h3 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.125rem;
+            margin-bottom: 1.25rem;
+            color: #1c2b1e;
+        }
+        .next-step {
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        .step-num {
+            width: 32px; height: 32px;
+            background: #3d5240;
+            color: white;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.8125rem;
+            font-weight: 700;
+            flex-shrink: 0;
+            box-shadow: 0 0 0 3px #f4e9c9;
+        }
+        .step-text strong { display: block; font-size: 0.9rem; color: #1c2b1e; }
+        .step-text span { font-size: 0.8125rem; color: #6b7e6d; }
+    </style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav th:replace="~{navbar :: navbar}"></nav>
+
+<div class="confirm-page">
+
+    <!-- Success Header -->
+    <div class="success-wrap">
+        <div class="tick-circle">
+            <i class="fas fa-check"></i>
+        </div>
+        <h1 th:if="${booking.paymentStatus.name() == 'PENDING'}">Almost There! 🕐</h1>
+        <h1 th:if="${booking.paymentStatus.name() == 'ADVANCE_PAID'}">Advance Received! 🎉</h1>
+        <h1 th:if="${booking.paymentStatus.name() == 'PAID'}">Booking Confirmed! 🎉</h1>
+        <p th:if="${booking.paymentStatus.name() == 'PENDING'}">Confirm your room by completing advance payment.
+        </p>
+        <p th:if="${booking.paymentStatus.name() == 'ADVANCE_PAID'}">The advance payment has been received. The remaining payment will have to be made at checkout.</p>
+        <p th:if="${booking.paymentStatus.name() == 'PAID'}">Your room has been successfully booked. A confirmation email will be sent.</p>
+    </div>
+
+    <div class="confirm-layout">
+
+        <!-- Booking Card -->
+        <div class="confirm-card">
+            <div class="confirm-card-header">
+                <div class="booking-id">
+                    Booking ID <strong>#<span th:text="${booking.bookingId}">0</span></strong>
+                </div>
+                <div class="status-chip" th:if="${booking.paymentStatus.name() == 'PAID'}">
+                    <i class="fas fa-circle" style="font-size:8px; color:#4ade80;"></i>
+                    <span th:text="${booking.status}">CONFIRMED</span>
+                </div>
+                <div class="status-chip" th:if="${booking.paymentStatus.name() == 'ADVANCE_PAID'}" style="background: rgba(61,196,255,0.2); border-color: rgba(61,196,255,0.4);">
+                    <i class="fas fa-circle" style="font-size:8px; color:#3db4ff;"></i>
+                    <span>ADVANCE PAID</span>
+                </div>
+                <div class="status-chip" th:if="${booking.paymentStatus.name() == 'PENDING'}" style="background: rgba(255,193,7,0.2); border-color: rgba(255,193,7,0.4);">
+                    <i class="fas fa-circle" style="font-size:8px; color:#ffc107;"></i>
+                    <span>PAYMENT PENDING</span>
+                </div>
+            </div>
+
+            <div class="ticket-perf"></div>
+
+            <div class="confirm-body">
+
+                <!-- Room Preview -->
+                <div class="room-inline">
+                    <div class="room-inline-img">
+                        <img th:if="${booking.room.images != null and !booking.room.images.empty}"
+                             th:src="@{/admin/rooms/image/{id}(id=${booking.room.images[0].imageId})}"
+                             th:alt="${booking.room.name}">
+                        <img th:unless="${booking.room.images != null and !booking.room.images.empty}"
+                             src="/images/room-deluxe.jpg" alt="Room">
+                    </div>
+                    <div>
+                        <div class="room-inline-name" th:text="${booking.room.name}">Room</div>
+                        <div class="room-inline-meta">
+                            <span th:text="${booking.room.roomType}">Type</span> &nbsp;·&nbsp;
+                            Room No. <span th:text="${booking.room.roomNumber}">-</span>
+                        </div>
+                    </div>
+                    <div class="room-inline-price">
+                        ₹<span th:text="${#numbers.formatInteger(booking.room.pricePerDay, 1, 'COMMA')}">0</span>
+                        <span>per night</span>
+                    </div>
+                </div>
+
+                <!-- Stay Info -->
+                <div class="info-section-title">Stay Details</div>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <div class="lbl">Check-in</div>
+                        <div class="val" th:text="${booking.checkin}">-</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="lbl">Check-out</div>
+                        <div class="val" th:text="${booking.checkout}">-</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="lbl">Duration</div>
+                        <div class="val" th:text="${nights} + ' Night(s)'">-</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="lbl">Guests</div>
+                        <div class="val" th:text="${booking.guests} + ' Guest(s)'">-</div>
+                    </div>
+                </div>
+
+                <!-- Guest Info -->
+                <div class="info-section-title">Guest Details</div>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <div class="lbl">Name</div>
+                        <div class="val" th:text="${booking.guest.name}">-</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="lbl">Email</div>
+                        <div class="val" th:text="${booking.guest.email}">-</div>
+                    </div>
+                    <div class="info-item" style="grid-column: 1 / -1;">
+                        <div class="lbl">Special Requests</div>
+                        <div class="val"
+                             th:style="${booking.specialRequests != null and booking.specialRequests != ''} ? 'font-weight:600;' : 'font-weight:400; font-style:italic; color:#9aaa9c;'"
+                             th:text="${booking.specialRequests != null and booking.specialRequests != ''} ? ${booking.specialRequests} : 'No special requests'">-</div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Sidebar: Total, Actions, What's Next -->
+        <div class="summary-col">
+
+            <div class="summary-card">
+                <div class="info-section-title">Payment Summary</div>
+                <!-- Total -->
+                <div class="total-box" style="flex-direction:column; align-items:stretch; gap:0.75rem;"
+                     th:with="advanceAmt=${#numbers.formatDecimal(booking.totalAmount * 0.30, 1, 'COMMA', 0, 'POINT')},
+                          balanceAmt=${#numbers.formatDecimal(booking.totalAmount * 0.70, 1, 'COMMA', 0, 'POINT')}">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <div class="lbl">Total Amount</div>
+                        <div class="amount">₹<span th:text="${#numbers.formatInteger(booking.totalAmount, 1, 'COMMA')}">0</span></div>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; padding-top:0.5rem; border-top:1px dashed #c9d6cc;">
+                        <div class="lbl" th:text="${booking.paymentStatus.name() == 'PENDING'} ? 'Advance Due (30%)' : 'Advance Paid (30%)'">Advance</div>
+                        <div class="amount" style="font-size:1.1rem;">₹<span th:text="${advanceAmt}">0</span></div>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <div class="lbl" th:text="${booking.paymentStatus.name() == 'PAID'} ? 'Balance Paid' : 'Balance Due at Checkout'">Balance</div>
+                        <div class="amount" style="font-size:1.1rem;">₹<span th:text="${balanceAmt}">0</span></div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="confirm-actions" style="margin-top:1.25rem;">
+                    <a th:if="${booking.paymentStatus.name() == 'PENDING'}"
+                       href="javascript:void(0)" id="payAdvanceBtn" class="btn-action btn-primary-action">
+                        <i class="fas fa-credit-card"></i> Pay Advance
+                    </a>
+                    <a th:if="${booking.paymentStatus.name() == 'ADVANCE_PAID'}"
+                       href="javascript:void(0)" id="payBalanceBtn" class="btn-action btn-primary-action">
+                        <i class="fas fa-credit-card"></i> Pay Balance at Checkout
+                    </a>
+                    <a th:if="${booking.paymentStatus.name() == 'PAID'}"
+                       href="/mybookings" class="btn-action btn-primary-action">
+                        <i class="fas fa-list"></i> My Bookings
+                    </a>
+                    <a href="/rooms" class="btn-action btn-outline-action">
+                        <i class="fas fa-bed"></i> Browse Rooms
+                    </a>
+                </div>
+            </div>
+
+            <!-- What's Next -->
+            <div class="whats-next">
+                <h3>What's Next?</h3>
+                <div class="next-step">
+                    <div class="step-num">1</div>
+                    <div class="step-text">
+                        <strong>Confirmation Email</strong>
+                        <span>Booking details will be sent to your email.</span>
+                    </div>
+                </div>
+                <div class="next-step">
+                    <div class="step-num">2</div>
+                    <div class="step-text">
+                        <strong>Check-in Day</strong>
+                        <span>Come to the reception with ID proof and collect the room key.</span>
+                    </div>
+                </div>
+                <div class="next-step">
+                    <div class="step-num">3</div>
+                    <div class="step-text">
+                        <strong>Enjoy Your Stay</strong>
+                        <span>World-class hospitality aur luxury amenities enjoy!</span>
+                    </div>
+                </div>
+            </div>
+
+        </div><!-- /.summary-col -->
+
+    </div><!-- /.confirm-layout -->
+
+</div>
+
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    const bookingId    = /*[[${booking.bookingId}]]*/ 0;
+    const guestNameJs  = /*[[${booking.guest.name}]]*/ '';
+    const guestEmailJs = /*[[${booking.guest.email}]]*/ '';
+
+    function setupPayButton(btnId, paymentType) {
+        const btn = document.getElementById(btnId);
+        if (!btn) return;
+
+        btn.addEventListener('click', async function () {
+            const originalHtml = btn.innerHTML;
+            btn.style.pointerEvents = 'none';
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+
+            try {
+                const response = await fetch('/payment/create-order', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ bookingId: bookingId, paymentType: paymentType })
+                });
+                const order = await response.json();
+                if (order.error) {
+                    alert('Error: ' + order.error);
+                    btn.style.pointerEvents = 'auto';
+                    btn.innerHTML = originalHtml;
+                    return;
+                }
+
+                const options = {
+                    key: order.keyId,
+                    amount: order.amount,
+                    currency: order.currency,
+                    order_id: order.orderId,
+                    name: "XansaStays",
+                    description: paymentType === 'ADVANCE' ? "Advance Room Booking Payment" : "Balance Room Booking Payment",
+                    prefill: { name: guestNameJs, email: guestEmailJs },
+                    theme: { color: "#3d5240" },
+                    handler: async function (razorpayResponse) {
+                        const verifyResponse = await fetch('/payment/verify', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                razorpay_order_id: razorpayResponse.razorpay_order_id,
+                                razorpay_payment_id: razorpayResponse.razorpay_payment_id,
+                                razorpay_signature: razorpayResponse.razorpay_signature,
+                                bookingId: bookingId,
+                                paymentType: paymentType
+                            })
+                        });
+                        const verifyData = await verifyResponse.json();
+                        if (verifyData.verified) {
+                            location.reload();
+                        } else {
+                            alert('Payment verification failed!');
+                            btn.style.pointerEvents = 'auto';
+                            btn.innerHTML = originalHtml;
+                        }
+                    },
+                    modal: {
+                        ondismiss: function () {
+                            btn.style.pointerEvents = 'auto';
+                            btn.innerHTML = originalHtml;
+                        }
+                    }
+                };
+                new Razorpay(options).open();
+            } catch (err) {
+                alert('Something went wrong: ' + err.message);
+                btn.style.pointerEvents = 'auto';
+                btn.innerHTML = originalHtml;
+            }
+        });
+    }
+
+    setupPayButton('payAdvanceBtn', 'ADVANCE');
+    setupPayButton('payBalanceBtn', 'BALANCE');
+    /*]]>*/
+</script>
+<script>
+    function toggleDropdown(event) {
+        event.stopPropagation();
+        const d = document.getElementById('profileDropdown');
+        if (d) d.classList.toggle('show');
+    }
+    window.addEventListener('click', function(e) {
+        if (!e.target.closest('.profile-dropdown-wrapper')) {
+            const d = document.getElementById('profileDropdown');
+            if (d) d.classList.remove('show');
+        }
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,3221 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+    <title>XansaStays — Admin Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --gold:    #c9a84c;
+            --gold-lt: #dbbf6e;
+            --ink:     #1c2b1e;
+            --ink-mid: #3d5240;
+            --slate:   #6b7e6d;
+            --mist:    #f7f8f6;
+            --white:   #ffffff;
+            --emerald: #3d5240;
+            --crimson: #8B3A2B;
+            --sky:     #35506B;
+            --font-display: 'Fraunces', Georgia, serif;
+            --font-body:    'IBM Plex Sans', system-ui, sans-serif;
+            --font-mono:    'IBM Plex Mono', ui-monospace, monospace;
+            --radius: 10px;
+            --radius-sm: 6px;
+            --shadow: 0 1px 2px rgba(22,33,29,.06), 0 2px 10px rgba(22,33,29,.06);
+            --shadow-hover: 0 6px 22px rgba(22,33,29,.14);
+            --sidebar-w: 260px;
+            --site-nav-h: 65px;
+        }
+
+        body {
+            font-family: var(--font-body);
+            background: var(--mist);
+            color: white;
+            display: flex;
+            flex-wrap: wrap;
+            min-height: 100vh;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* ── OVERLAY ──────────────────────────── */
+        .overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,.5);
+            z-index: 90;
+            backdrop-filter: blur(2px);
+        }
+        .overlay.open { display: block; }
+
+        /* ── SIDEBAR ──────────────────────────── */
+        .sidebar {
+            width: var(--sidebar-w);
+            background:#1C2B1E;
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            top: var(--site-nav-h, 0px); left: 0; bottom: 0;
+            z-index: 100;
+            transition: transform .3s cubic-bezier(.4,0,.2,1);
+            overflow-y: auto;
+            transform: translateX(-100%);
+            -webkit-overflow-scrolling: touch;
+        }
+        .sidebar.open { transform: translateX(0); }
+
+        .sidebar-logo {
+            padding: 24px 20px 18px;
+            border-bottom: 1px solid rgba(169,121,60,.25);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .sidebar-logo .brand {
+            font-family: var(--font-display);
+            font-weight: 600;
+            font-size: 1.35rem;
+            color: #dbbf6e;
+            letter-spacing: .3px;
+        }
+        .sidebar-logo .tagline {
+            font-size: .6rem;
+            color: #7C8A7B;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-top: 6px;
+            padding-top: 5px;
+            border-top: 1px solid rgba(169,121,60,.3);
+            display: inline-block;
+        }
+        .sidebar-close {
+            background:#1C2B1E;
+            border: none;
+            color: #7C8A7B;
+            font-size: 1.1rem;
+            cursor: pointer;
+            padding: 8px 10px;
+            border-radius: var(--radius-sm);
+            line-height: 1;
+            min-width: 36px;
+            min-height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .nav-section { padding: 16px 0 4px; }
+        .nav-label {
+            font-size: .58rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: rgba(246,241,228,.4);
+            padding: 0 18px 6px;
+        }
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 13px 18px;
+            color: #A8AF9E;
+            text-decoration: none;
+            font-size: .85rem;
+            font-weight: 500;
+            border-left: 3px solid transparent;
+            transition: all .15s, transform .2s ease;
+            cursor: pointer;
+            min-height: 48px;
+            position: relative;
+            transform-origin: left center;
+        }
+        .nav-item:hover, .nav-item.active {
+            color: #E3C08A;
+            background: rgba(169,121,60,.12);
+            border-left-color: var(--gold);
+            transform: scale(1.045);
+        }
+        .nav-item.active::after {
+            content: '';
+            position: absolute;
+            right: 18px; top: 50%;
+            width: 6px; height: 6px;
+            margin-top: -3px;
+            background: var(--gold);
+            transform: rotate(45deg);
+        }
+        .nav-item .icon {
+            font-size: 1.1rem;
+            width: 22px;
+            text-align: center;
+            flex-shrink: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform .2s ease, color .2s ease;
+        }
+        .nav-item:hover .icon, .nav-item.active .icon {
+            transform: scale(1.2);
+        }
+
+        /* Colorful icons — each nav item gets its own accent color */
+        .nav-item[data-page="dashboard"]  .icon i { color: #dbbf6e; }
+        .nav-item[data-page="rooms"]      .icon i { color: #6b8fd6; }
+        .nav-item[data-page="all-rooms"]  .icon i { color: #4fb0a5; }
+        .nav-item[href="/admin/rooms/addroom"] .icon i { color: #6bc46d; }
+        .nav-item[data-page="bookings"]   .icon i { color: #d99a3f; }
+        .nav-item[data-page="checkout"]   .icon i { color: #d9622b; }
+        .nav-item[data-page="guests"]     .icon i { color: #9b7fd4; }
+        .nav-item[data-page="reviews"]    .icon i { color: #e0c341; }
+        .nav-item[data-page="coupons"]    .icon i { color: #e0455f; }
+
+        .sidebar-bottom {
+            margin-top: auto;
+            padding: 16px;
+            border-top: 1px solid rgba(169,121,60,.15);
+        }
+        .admin-chip { display: flex; align-items: center; gap: 10px; padding: 6px; border-radius: var(--radius-sm); transition: background .15s; }
+        .admin-chip:hover { background: rgba(169,121,60,.12); }
+        .avatar {
+            width: 38px; height: 38px;
+            border-radius: 50%;
+            background: #c9a84c;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: .82rem; color: #1c2b1e;
+            flex-shrink: 0;
+        }
+        .admin-info .name { font-size: .82rem; color: var(--white); font-weight: 600; }
+        .admin-info .role { font-size: .70rem; color: var(--slate); }
+
+        /* ── MAIN ─────────────────────────────── */
+        .main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            width: 100%;
+            margin-top: var(--site-nav-h, 0px);
+        }
+
+        /* ── TOPBAR ───────────────────────────── */
+        .topbar {
+            background: var(--white);
+            padding: 0 16px;
+            height: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid #E8E6E0;
+            position: relative; z-index: 50;
+            box-shadow: 0 1px 6px rgba(0,0,0,.06);
+        }
+        .topbar-left { display: flex; align-items: center; gap: 10px; }
+
+        .hamburger {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            border-radius: var(--radius-sm);
+            min-width: 40px;
+            min-height: 40px;
+            align-items: center;
+            justify-content: center;
+        }
+        .hamburger span {
+            display: block;
+            width: 20px; height: 2px;
+            background: var(--ink);
+            border-radius: 2px;
+        }
+
+        .topbar-title {
+            font-family: var(--font-display);
+            font-size: 1.35rem;
+            color: var(--ink);
+        }
+        .topbar-meta { display: flex; align-items: center; gap: 12px; }
+        .notif-wrapper { position: relative; }
+        .notif {
+            position: relative;
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 6px;
+            min-width: 40px;
+            min-height: 40px;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            color: var(--gold);
+            border-radius: 50%;
+            transition: background .18s, transform .18s;
+        }
+        .notif:hover { background: rgba(169,121,60,.12); transform: scale(1.1); }
+        .notif-dot {
+            position: absolute;
+            top: 6px; right: 6px;
+            width: 9px; height: 9px;
+            background: var(--crimson);
+            border-radius: 50%;
+            border: 1.5px solid var(--white);
+        }
+        .notif-dropdown {
+            display: none;
+            position: absolute;
+            top: 48px; right: 0;
+            width: 300px;
+            max-width: 88vw;
+            background: var(--white);
+            border-radius: var(--radius);
+            border: 1px solid #E4DEC9;
+            box-shadow: var(--shadow-hover);
+            z-index: 200;
+            overflow: hidden;
+        }
+        .notif-dropdown.open { display: block; }
+        .notif-dropdown-header {
+            padding: 12px 16px;
+            border-bottom: 1px solid #F1ECDD;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .notif-dropdown-header .t {
+            font-family: var(--font-display);
+            font-weight: 600;
+            font-size: .9rem;
+            color: var(--ink);
+        }
+        .notif-dropdown-header .clear {
+            font-size: .68rem;
+            color: var(--gold);
+            font-weight: 600;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: .4px;
+        }
+        .notif-list { max-height: 320px; overflow-y: auto; }
+        .notif-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 12px 16px;
+            border-bottom: 1px solid #F7F5EE;
+            font-size: .8rem;
+            color: var(--ink);
+            transition: background .15s;
+        }
+        .notif-item:last-child { border-bottom: none; }
+        .notif-item:hover { background: #FAF8F1; }
+        .notif-item .ni-icon {
+            width: 30px; height: 30px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: .8rem;
+            flex-shrink: 0;
+        }
+        .notif-item .ni-body .ni-text { line-height: 1.4; }
+        .notif-item .ni-body .ni-time { font-size: .66rem; color: var(--slate); margin-top: 2px; }
+        .notif-empty { padding: 26px 16px; text-align: center; color: var(--slate); font-size: .8rem; }
+
+        /* ── CONTENT ──────────────────────────── */
+        .content { padding: 16px 14px 80px; }
+
+        /* ── SPA PAGE SWITCHING ───────────────── */
+        .page { display: none; }
+        .page.active { display: block; }
+
+        /* ── GREETING BANNER ──────────────────── */
+        .greeting-banner {
+            background: linear-gradient(135deg, var(--ink) 0%, var(--ink-mid) 100%);
+            border-radius: var(--radius);
+            padding: 18px 20px;
+            margin-bottom: 16px;
+            position: relative;
+            overflow: hidden;
+        }
+        .greeting-banner::after {
+            content: '';
+            position: absolute;
+            top: -30px; right: -30px;
+            width: 120px; height: 120px;
+            border-radius: 50%;
+            background: rgba(201,168,76,.12);
+        }
+        .greeting-banner .gday { font-size: .72rem; color: var(--gold); text-transform: uppercase; letter-spacing: 1.5px; font-weight: 600; }
+        .greeting-banner .gname { font-family: var(--font-display); font-size: 1.3rem; color: var(--white); margin-top: 2px; }
+        .greeting-banner .gdate { font-size: .70rem; color: rgba(255,255,255,.5); margin-top: 4px; }
+
+        /* ── STATS GRID ───────────────────────── */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            background: var(--white);
+            border: 1px solid #E4DEC9;
+            border-radius: var(--radius);
+            padding: 16px 14px;
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            border-top: 3px solid var(--gold);
+            position: relative;
+            overflow: hidden;
+            transition: transform .2s ease, box-shadow .2s ease;
+        }
+        .stat-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-hover); }
+        .stat-card.gold  { border-top-color: var(--gold); }
+        .stat-card.green { border-top-color: var(--emerald); }
+        .stat-card.blue  { border-top-color: var(--sky); }
+        .stat-card.red   { border-top-color: var(--crimson); }
+
+        .stat-label {
+            font-size: .62rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: var(--slate);
+            font-weight: 600;
+        }
+        .stat-card-top-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 6px;
+        }
+        .revenue-filter {
+            font-size: .58rem;
+            font-weight: 700;
+            color: var(--crimson);
+            background: #FDEDED;
+            border: 1px solid #F3D5D2;
+            border-radius: 20px;
+            padding: 3px 6px;
+            cursor: pointer;
+            outline: none;
+            -webkit-appearance: none;
+            appearance: none;
+            text-align: center;
+        }
+        .revenue-filter:hover { background: #F3E3DE; }
+        .stat-value {
+            font-family: var(--font-mono);
+            font-weight: 700;
+            font-size: 1.85rem;
+            line-height: 1;
+            letter-spacing: -.8px;
+            background: linear-gradient(135deg, var(--v-color-dark, var(--ink)) 0%, var(--v-color-light, var(--ink)) 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .stat-card.gold  .stat-value { --v-color-dark: #9c7a1f; --v-color-light: #dbbf6e; }
+        .stat-card.green .stat-value { --v-color-dark: #24361f; --v-color-light: #4f9c50; }
+        .stat-card.blue  .stat-value { --v-color-dark: #1f3347; --v-color-light: #5a89b8; }
+        .stat-card.red   .stat-value { --v-color-dark: #5c2318; --v-color-light: #b8543c; }
+
+        .stat-sub { font-size: .67rem; color: var(--slate); }
+        .stat-icon {
+            font-size: 1.25rem;
+            margin-bottom: 2px;
+            width: 34px; height: 34px;
+            border-radius: 9px;
+            display: flex; align-items: center; justify-content: center;
+            transition: transform .2s ease;
+        }
+        .stat-card:hover .stat-icon { transform: scale(1.12) rotate(-4deg); }
+        .stat-card.gold  .stat-icon { color: #b6912f; background: #FBF1E1; }
+        .stat-card.green .stat-icon { color: var(--emerald); background: #EAF0EA; }
+        .stat-card.blue  .stat-icon { color: var(--sky);    background: #E6EDF3; }
+        .stat-card.red   .stat-icon { color: var(--crimson); background: #F3E3DE; }
+
+
+        /* ── OCCUPANCY DONUT CARD ─────────────── */
+        .occupancy-card {
+            background: var(--white);
+            border: 1px solid #E4DEC9;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 18px 16px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 22px;
+            flex-wrap: wrap;
+        }
+        .occupancy-donut-wrap {
+            position: relative;
+            width: 120px;
+            height: 120px;
+            flex-shrink: 0;
+        }
+        .occupancy-donut-wrap svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+        .occupancy-donut-wrap circle { transition: stroke-dasharray 1s ease, stroke-dashoffset 1s ease; }
+        .occupancy-center {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .occupancy-center .pct {
+            font-family: var(--font-mono);
+            font-weight: 700;
+            font-size: 1.5rem;
+            color: var(--ink);
+            line-height: 1;
+        }
+        .occupancy-center .pct-label {
+            font-size: .58rem;
+            color: var(--slate);
+            text-transform: uppercase;
+            letter-spacing: .5px;
+            margin-top: 3px;
+        }
+        .occupancy-info { flex: 1; min-width: 160px; }
+        .occupancy-title {
+            font-family: var(--font-display);
+            font-weight: 600;
+            font-size: .95rem;
+            color: var(--ink);
+            margin-bottom: 10px;
+        }
+        .occupancy-legend { display: flex; flex-direction: column; gap: 8px; }
+        .occupancy-legend-row { display: flex; align-items: center; gap: 8px; font-size: .78rem; color: var(--ink); }
+        .occupancy-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+        .occupancy-legend-row .val { margin-left: auto; font-weight: 600; font-family: var(--font-mono); }
+
+        /* ── SECTION TITLE (ledger folio) ─────── */
+        .section-title {
+            font-family: var(--font-display);
+            font-weight: 600;
+            font-size: 1.05rem;
+            color: var(--ink);
+            margin-bottom: 14px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--ink);
+            display: inline-block;
+        }
+        .section-title::before {
+            content: '';
+            display: block;
+            width: 26px;
+            height: 2px;
+            background: var(--gold);
+            margin-bottom: 7px;
+        }
+
+        /* ── CARD (ledger sheet) ──────────────── */
+        .card {
+            background: var(--white);
+            border-radius: var(--radius);
+            border: 1px solid #E4DEC9;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            margin-bottom: 16px;
+        }
+        .card-header {
+            padding: 14px 16px 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid #F1ECDD;
+            margin-bottom: 2px;
+        }
+        .card-title { font-family: var(--font-display); font-weight: 600; font-size: .95rem; color: var(--ink); }
+        .card-action {
+            font-size: .68rem; color: var(--gold); font-weight: 600; font-family: var(--font-mono);
+            text-transform: uppercase; letter-spacing: .4px;
+            cursor: pointer; text-decoration: none; padding: 4px 0;
+        }
+
+        /* ── ANALYTICS (charts) ───────────────── */
+        .two-col-wrap {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+        .analytics-card {
+            border-top: 3px solid transparent;
+            transition: box-shadow .2s, transform .2s;
+        }
+        .analytics-card:hover { box-shadow: var(--shadow-hover); }
+        .analytics-card.gold-top { border-top-color: var(--gold); }
+        .analytics-card.sage-top { border-top-color: var(--emerald); }
+        .analytics-card .card-header {
+            padding: 16px 18px 12px;
+            border-bottom: 1px solid #F5F4F0;
+            margin-bottom: 4px;
+        }
+        .card-title-row { display: flex; align-items: center; gap: 8px; }
+        .card-title-icon {
+            width: 26px; height: 26px; border-radius: 7px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: .8rem; flex-shrink: 0;
+        }
+        .card-title-icon.gold { background: var(--gold-lt); }
+        .card-title-icon.sage { background: #DCEEE2; }
+        .chart-summary {
+            font-size: .68rem; font-weight: 700; color: var(--emerald);
+            background: #EAF6EE; padding: 3px 10px; border-radius: 20px;
+        }
+        .chart-wrap { position: relative; height: 210px; padding: 14px 18px 18px; }
+        .donut-wrap { display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 18px 20px 20px; }
+        .donut-canvas-holder { position: relative; width: 148px; height: 148px; }
+        .donut-canvas { width: 148px !important; height: 148px !important; }
+        .donut-center {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+            text-align: center; pointer-events: none;
+        }
+        .donut-center .dc-value { font-family: var(--font-display); font-size: 1.35rem; color: var(--ink); line-height: 1; }
+        .donut-center .dc-label { font-size: .58rem; color: var(--slate); text-transform: uppercase; letter-spacing: .5px; margin-top: 2px; }
+        .donut-legend { width: 100%; display: flex; flex-direction: column; gap: 8px; }
+        .legend-item {
+            display: flex; flex-direction: column; gap: 5px;
+            padding: 8px 10px; font-size: .75rem; color: var(--ink-mid);
+            background: var(--mist); border-radius: 9px;
+        }
+        .legend-top-row { display: flex; align-items: center; justify-content: space-between; width: 100%; }
+        .legend-dot { width: 9px; height: 9px; border-radius: 50%; margin-right: 7px; flex-shrink: 0; }
+        .legend-left { display: flex; align-items: center; font-weight: 600; color: var(--ink); }
+        .legend-right { font-size: .68rem; color: var(--slate); font-weight: 600; }
+        .legend-bar-track { width: 100%; height: 4px; border-radius: 20px; background: #E7E4DC; overflow: hidden; }
+        .legend-bar-fill { height: 100%; border-radius: 20px; }
+
+        /* ── TABLE (horizontal scroll) ────────── */
+        .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        table { width: 100%; border-collapse: collapse; min-width: 420px; }
+        thead th {
+            font-size: .64rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: var(--slate);
+            font-weight: 600;
+            padding: 10px 14px;
+            text-align: left;
+            background: #FBF7EA;
+            border-bottom: 1px solid #EAE3CE;
+            white-space: nowrap;
+        }
+        tbody tr { border-bottom: 1px solid #F1ECDD; }
+        tbody tr:last-child { border-bottom: none; }
+        td {
+            padding: 11px 14px;
+            font-size: .78rem;
+            color: var(--ink-mid);
+            vertical-align: middle;
+            white-space: nowrap;
+        }
+        .guest-name { font-weight: 600; color: var(--ink); }
+        .room-tag {
+            background: #E7ECEF; color: var(--sky);
+            font-size: .65rem; font-weight: 600;
+            padding: 3px 8px; border-radius: 12px;
+        }
+
+        /* ── BADGES (ink-stamp style) ─────────── */
+        .badge {
+            display: inline-block; font-family: var(--font-mono); font-size: .62rem; font-weight: 600;
+            text-transform: uppercase; letter-spacing: .5px;
+            padding: 3px 9px; border-radius: 3px; border: 1px solid currentColor;
+            background: transparent;
+        }
+        .badge-paid    { color: #2F4A32; background: #DCE6D3; border-color: #2F4A32; }
+        .badge-pending { color: #7A5A17; background: #FFF3CD; border-color: #7A5A17; }
+        .badge-open    { color: #2F4A32; background: #DCE6D3; border-color: #2F4A32; }
+        .badge-closed  { color: #5C2318; background: #F3E3DE; border-color: #5C2318; }
+
+        /* ── ROOM OCCUPANCY LIST ──────────────── */
+        .room-list { padding: 4px 0; }
+        .room-row {
+            display: flex; align-items: center; gap: 10px;
+            padding: 12px 16px;
+            border-bottom: 1px solid #F1ECDD;
+        }
+        .room-row:last-child { border-bottom: none; }
+        .room-id { font-size: .68rem; color: var(--slate); width: 42px; font-weight: 600; flex-shrink: 0; }
+        .room-type-pill {
+            font-size: .63rem; font-weight: 700;
+            background: var(--ink); color: var(--gold-lt);
+            padding: 3px 8px; border-radius: 10px;
+            min-width: 62px; text-align: center; flex-shrink: 0;
+        }
+        .bar-wrap {
+            flex: 1; background: #EAE3CE; border-radius: 20px;
+            height: 5px; overflow: hidden;
+        }
+        .bar-fill {
+            height: 100%; border-radius: 20px;
+            background: linear-gradient(90deg, var(--gold), #dbbf6e);
+        }
+        .room-price { font-size: .74rem; font-weight: 600; color: var(--ink); min-width: 58px; text-align: right; flex-shrink: 0; }
+
+        /* ── ROOM CARDS GRID (public-site jaisa look) ── */
+        .room-card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 20px;
+            padding: 16px 18px 20px;
+        }
+        .room-card {
+            background: var(--white);
+            border-radius: 18px;
+            border: 1px solid #EDEAE2;
+            box-shadow: 0 4px 18px rgba(26,26,46,.06);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transition: box-shadow .2s, transform .2s;
+        }
+        .room-card:hover { box-shadow: var(--shadow-hover); transform: translateY(-2px); }
+        .room-card-img {
+            width: 100%;
+            height: 200px;
+            background: #EFEDE6 center/cover no-repeat;
+            display: flex; align-items: center; justify-content: center;
+            color: #C4C0B4;
+            font-size: 1.8rem;
+            position: relative;
+        }
+        .room-card-pill {
+            position: absolute; top: 12px; left: 12px;
+            background: rgba(255,255,255,.94);
+            color: var(--ink);
+            font-size: .68rem; font-weight: 700;
+            padding: 6px 14px;
+            border-radius: 50px;
+            display: flex; align-items: center; gap: 5px;
+        }
+        .room-card-pill.booked::before { content: "●"; color: #dc2626; font-size: .55rem; }
+        .room-card-pill.available::before { content: "●"; color: #16a34a; font-size: .55rem; }
+        .room-card-pill.maintenance::before { content: "●"; color: #d97706; font-size: .55rem; }
+
+        /* ── DELETE CONFIRM MODAL ────────────── */
+        .del-modal-overlay {
+            display: none;
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,.55);
+            z-index: 200;
+            backdrop-filter: blur(3px);
+            align-items: center; justify-content: center;
+        }
+        .del-modal-overlay.open { display: flex; }
+        .del-modal {
+            background: #fff;
+            border-radius: 16px;
+            padding: 28px 24px 22px;
+            max-width: 340px; width: 90%;
+            box-shadow: 0 20px 60px rgba(0,0,0,.25);
+            text-align: center;
+            animation: modalPop .18s ease;
+        }
+        @keyframes modalPop { from { transform: scale(.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .del-modal .del-icon {
+            width: 56px; height: 56px;
+            background: #FEE2E2; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.5rem; margin: 0 auto 14px;
+        }
+        .del-modal h3 { font-family: var(--font-display); font-size: 1.1rem; color: var(--ink); margin-bottom: 8px; }
+        .del-modal p  { font-size: .8rem; color: var(--slate); line-height: 1.5; margin-bottom: 22px; }
+        .del-modal-btns { display: flex; gap: 10px; }
+        .del-btn-cancel {
+            flex: 1; padding: 11px;
+            background: #f1f1f0; color: var(--ink);
+            border: none; border-radius: 9px;
+            font-size: .85rem; font-weight: 600; cursor: pointer;
+        }
+        .del-btn-confirm {
+            flex: 1; padding: 11px;
+            background: #dc2626; color: #fff;
+            border: none; border-radius: 9px;
+            font-size: .85rem; font-weight: 600; cursor: pointer;
+        }
+        .del-btn-confirm:hover { background: #b91c1c; }
+        .del-btn-cancel:hover  { background: #e2e2e0; }
+        .room-card-del {
+            position: absolute; top: 10px; right: 10px;
+            width: 32px; height: 32px;
+            background: rgba(255,255,255,.9);
+            border: none; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            color: #b23b3b; font-size: .82rem;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,.15);
+        }
+        .room-card-del:hover { background: #F3E3DE; }
+        .room-card-body { padding: 18px 20px 20px; display: flex; flex-direction: column; gap: 10px; }
+        .room-card-name {
+            font-family: var(--font-display);
+            font-weight: 700;
+            font-size: 1.15rem;
+            color: var(--ink);
+        }
+        .room-card-meta {
+            font-size: .78rem; color: var(--slate);
+            display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+        }
+        .room-card-meta span:not(:last-child)::after { content: "•"; margin-left: 8px; color: #d8d5cb; }
+        .room-card-divider { border-top: 1px solid #EFEDE6; margin: 2px 0 4px; }
+        .room-card-bottom { display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; }
+        .room-card-price { font-size: 1rem; font-weight: 700; color: var(--ink); display: flex; align-items: baseline; gap: 3px; }
+        .room-card-price .unit { font-size: .72rem; font-weight: 500; color: var(--slate); }
+        .room-card-taxes { font-size: .68rem; color: #9a978c; margin-top: 2px; }
+        .room-card-edit-btn {
+            background: #33473a;
+            color: #fff;
+            border: none;
+            font-size: .78rem; font-weight: 700;
+            padding: 10px 20px;
+            border-radius: 9px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex; align-items: center; gap: 6px;
+            white-space: nowrap;
+        }
+        .room-card-edit-btn:hover { background: #435a49; }
+        .room-card-delete-btn {
+            background: #dc2626;
+            color: #fff;
+            border: none;
+            font-size: .78rem; font-weight: 700;
+            padding: 10px 20px;
+            border-radius: 9px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex; align-items: center; gap: 6px;
+            white-space: nowrap;
+        }
+        .room-card-delete-btn:hover { background: #b91c1c; }
+
+        /* ── QUICK ACTIONS GRID ───────────────── */
+        .actions-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .action-card {
+            background: var(--white);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 16px 14px;
+            display: flex; flex-direction: column; gap: 8px;
+            cursor: pointer;
+            transition: box-shadow .15s, transform .15s;
+            border-left: 4px solid var(--gold);
+            text-decoration: none;
+            min-height: 80px;
+            justify-content: center;
+        }
+        .action-card:active { transform: scale(.97); box-shadow: var(--shadow-hover); }
+        .action-count {
+            margin-top: 6px;
+            font-weight: 700;
+            font-size: .95rem;
+            color: #3d5240;
+        }
+        .action-icon { font-size: 1.5rem; }
+        .action-title { font-family: var(--font-display); font-size: .85rem; color: var(--ink); line-height: 1.3; }
+
+        /* ── HOTEL CARDS ──────────────────────── */
+        .hotel-scroll {
+            display: flex;
+            gap: 12px;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            padding-bottom: 6px;
+            margin-bottom: 20px;
+            scrollbar-width: none;
+        }
+        .hotel-scroll::-webkit-scrollbar { display: none; }
+        .hotel-card {
+            background: var(--white); border-radius: var(--radius);
+            box-shadow: var(--shadow); padding: 16px;
+            min-width: 220px;
+            flex-shrink: 0;
+        }
+        .hotel-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+        .hotel-name { font-family: var(--font-display); font-size: .88rem; color: var(--ink); }
+        .hotel-city { font-size: .70rem; color: var(--slate); margin-bottom: 10px; }
+        .hotel-meta { display: flex; align-items: center; gap: 10px; font-size: .68rem; color: var(--slate); flex-wrap: wrap; }
+
+        /* ── REVIEWS ──────────────────────────── */
+        .review-list { padding: 2px 0; }
+        .review-item { padding: 12px 16px; border-bottom: 1px solid #F1ECDD; }
+        .review-item:last-child { border-bottom: none; }
+        .review-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+        .review-guest { font-size: .78rem; font-weight: 600; color: var(--ink); }
+        .stars { color: var(--gold); font-size: .76rem; }
+        .review-text { font-size: .73rem; color: var(--slate); line-height: 1.5; }
+
+        .badge-cancel { background: #F3E3DE; color: #5C2318; border: 1px solid #5C2318; font-family: var(--font-mono); text-transform: uppercase; letter-spacing: .5px; }
+
+        /* ── SIDEBAR OPEN/CLOSE FIX ──────────── */
+        .footer {
+            text-align: center;
+            padding: 14px;
+            font-size: .68rem;
+            color: var(--slate);
+            border-top: 1px solid #E8E6E0;
+            background: var(--white);
+            margin-bottom: 56px;
+        }
+
+        /* ── BOTTOM NAV ───────────────────────── */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0; left: 0; right: 0;
+            background: #1C2B1E;
+            z-index: 80;
+            padding: 6px 0 max(8px, env(safe-area-inset-bottom));
+            border-top: 1px solid rgba(169,121,60,.25);
+        }
+        .bottom-nav-inner {
+            display: flex;
+            justify-content: space-around;
+        }
+        .bn-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 3px;
+            color: #7C8A7B;
+            font-size: .58rem;
+            font-weight: 600;
+            letter-spacing: .4px;
+            text-transform: uppercase;
+            cursor: pointer;
+            padding: 6px 10px;
+            border-radius: var(--radius-sm);
+            transition: color .15s;
+            text-decoration: none;
+            min-width: 52px;
+            min-height: 44px;
+            justify-content: center;
+        }
+        .bn-item .bn-icon { font-size: 1.3rem; }
+        .bn-item.active, .bn-item:hover { color: #dbbf6e; }
+
+        /* ── BUTTON INTERACTION FEEDBACK ───────── */
+        button {
+            cursor: pointer;
+            transition: filter .15s ease, transform .1s ease;
+        }
+        button:hover  { filter: brightness(1.08); }
+        button:active { filter: brightness(.9); transform: translateY(1px); }
+
+        .action-card:hover { box-shadow: var(--shadow-hover); transform: translateY(-1px); }
+
+        /* ── DESKTOP SIDEBAR (≥ 769px) ────────── */
+        @media (min-width: 769px) {
+            .sidebar { transform: translateX(0); }
+            .main { margin-left: var(--sidebar-w); }
+            .hamburger { display: none; }
+            .bottom-nav { display: none; }
+            .overlay { display: none !important; }
+
+            /* Desktop layout overrides */
+            .content { padding: 28px 32px 40px; }
+            .stats-grid { grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 28px; }
+            .stat-value { font-size: 2.2rem; }
+            .actions-grid { grid-template-columns: repeat(3, 1fr); gap: 20px; }
+            .action-card { padding: 22px 20px; }
+            .action-title { font-size: .95rem; }
+            .hotel-scroll { flex-wrap: nowrap; }
+            .hotel-card { min-width: auto; flex: 1; }
+            .topbar { padding: 14px 32px; }
+            .topbar-title { font-size: 1.45rem; }
+            .greeting-banner { display: none; }
+            .date-badge {
+                display: block;
+                font-size: .75rem;
+                color: var(--slate);
+                background: var(--mist);
+                padding: 5px 12px;
+                border-radius: 20px;
+                border: 1px solid #DDD;
+                white-space: nowrap;
+            }
+            .footer { margin-bottom: 0; }
+            .card { margin-bottom: 0; }
+
+            /* two-col for desktop */
+            .two-col-wrap {
+                display: grid;
+                grid-template-columns: 1.6fr 1fr;
+                gap: 24px;
+                margin-bottom: 28px;
+            }
+            .actions-section { margin-bottom: 28px; }
+            .hotels-section { margin-bottom: 28px; }
+        }
+
+        @media (min-width: 1025px) {
+            .hotel-card { min-width: auto; }
+        }
+
+        /* ── ADDED: badges, dots, filter tabs, search, user/room cells, empty state ── */
+        .badge-active   { background: #D4EDDA; color: #155724; }
+        .badge-inactive { background: #F8D7DA; color: #721C24; }
+        .badge-warn     { background: #FFF3CD; color: #856404; }
+        .badge .dot { width: 6px; height: 6px; }
+        .dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+        .dot.total    { background: var(--ink-mid); }
+        .dot.active   { background: var(--emerald); }
+        .dot.inactive { background: #C9A84C; }
+        .dot.warn     { background: #C9A84C; }
+
+        .toolbar { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 0 16px 14px; flex-wrap: wrap; }
+        .tabs { display: flex; gap: 6px; background: var(--mist); padding: 4px; border-radius: 20px; flex-wrap: wrap; }
+        .tab {
+            border: none; background: transparent; font-size: .72rem; font-weight: 600; color: var(--slate);
+            padding: 7px 14px; border-radius: 16px; cursor: pointer; transition: all .15s;
+        }
+        .tab.active { background: var(--ink); color: var(--gold-lt); }
+        .search-box { position: relative; flex: 1; min-width: 180px; max-width: 280px; }
+        .search-box input {
+            width: 100%; padding: 8px 12px 8px 32px; border: 1px solid #E8E6E0; border-radius: 20px;
+            font-size: .76rem; font-family: var(--font-body); color: var(--ink); background: var(--mist);
+        }
+        .search-box input:focus { outline: none; border-color: var(--gold); background: var(--white); }
+        .search-box::before { content: '🔍'; position: absolute; left: 11px; top: 50%; transform: translateY(-50%); font-size: .72rem; opacity: .6; }
+
+        .user-cell { display: flex; align-items: center; gap: 10px; }
+        .user-avatar {
+            width: 34px; height: 34px; border-radius: 50%; background: var(--ink); color: var(--gold-lt);
+            display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: .72rem;
+            flex-shrink: 0; overflow: hidden; position: relative;
+        }
+        .user-avatar img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+        .user-name { font-weight: 600; color: var(--ink); font-size: .80rem; }
+        .user-email { font-size: .68rem; color: var(--slate); }
+        .room-cell .rname { font-weight: 600; color: var(--ink); font-size: .80rem; }
+        .room-cell .rmeta { font-size: .68rem; color: var(--slate); }
+        .amount-val { font-weight: 700; color: var(--ink); }
+
+        .empty-state { text-align: center; padding: 40px 20px; color: var(--slate); font-size: .82rem; }
+
+        /* ══════════════════════════════════════════
+           GUEST SITE NAVBAR (top bar) — scoped so it
+           never clashes with the admin sidebar / bottom-nav
+           ══════════════════════════════════════════ */
+        .site-navbar {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            z-index: 300;
+            flex: 1 1 100%;
+            width: 100%;
+            --clr-brand:       #3d5240;
+            --clr-gold:        #c9a84c;
+            --clr-gold-hover:  #dbbf6e;
+            --clr-white:       #ffffff;
+            --clr-bg:          #f7f8f6;
+            --clr-text:        #1c2b1e;
+            --clr-muted:       #6b7e6d;
+            --clr-border:      #e2e6e2;
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.07);
+            --shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.16);
+            --radius-md: 12px;
+            --radius-lg: 18px;
+            --dur:  220ms;
+            --ease: cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .site-navbar nav {
+            position: relative;
+            z-index: 500;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            padding: 10px 24px;
+            background: #fff;
+            border-bottom: 1px solid var(--clr-border);
+            box-shadow: var(--shadow-sm);
+            font-family: 'IBM Plex Sans', sans-serif;
+        }
+        .site-navbar .logo { display: flex; align-items: center; }
+        .site-navbar .logo img { height: 44px; width: auto; object-fit: contain; }
+        .site-navbar .nav-links { display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap; }
+        .site-navbar .nav-links a {
+            position: relative; padding: 8px 12px; font-size: .82rem; font-weight: 600;
+            color: var(--clr-muted); border-radius: 8px; text-decoration: none; transition: all .3s ease;
+        }
+        .site-navbar .nav-links a:hover  { color: var(--clr-brand); }
+        .site-navbar .nav-links a.active { color: var(--clr-brand); }
+        .site-navbar .nav-links a.active::after {
+            content: ''; position: absolute; left: 10%; bottom: 0; width: 80%; height: 2px;
+            background: var(--clr-brand); border-radius: 10px;
+        }
+        .site-navbar .nav-right { display: flex; align-items: center; gap: 1rem; }
+        .site-navbar .btn-login {
+            padding: 8px 20px; font-size: .78rem; font-weight: 600; border: none; border-radius: 6px;
+            background: var(--clr-gold); color: var(--clr-text); cursor: pointer; transition: all .2s;
+        }
+        .site-navbar .btn-login:hover { background: var(--clr-gold-hover); }
+        .site-navbar .profile-dropdown-wrapper { position: relative; cursor: pointer; }
+        .site-navbar .profile-trigger {
+            display: flex; align-items: center; gap: 8px; padding: 5px 10px;
+            border-radius: var(--radius-md); border: 1px solid var(--clr-border); transition: background .2s;
+        }
+        .site-navbar .profile-trigger:hover { background: var(--clr-bg); }
+        .site-navbar .profile-info { display: flex; flex-direction: column; align-items: flex-end; line-height: 1.15; }
+        .site-navbar .profile-name { font-size: .78rem; font-weight: 600; color: var(--clr-text); }
+        .site-navbar .profile-role { font-size: .64rem; color: var(--clr-muted); }
+        .site-navbar .profile-avatar {
+            width: 32px; height: 32px; border-radius: 50%; border: 2px solid var(--clr-brand);
+            display: flex; align-items: center; justify-content: center; font-weight: 700;
+            font-size: .78rem; color: var(--clr-brand); flex-shrink: 0; object-fit: cover;
+        }
+        .site-navbar div.profile-avatar { background: var(--clr-gold); }
+        .site-navbar img.profile-avatar { background: transparent; }
+        .site-navbar .profile-avatar.large { width: 42px; height: 42px; font-size: 1rem; }
+        .site-navbar .profile-dropdown {
+            display: none; position: absolute; right: 0; top: calc(100% + 10px); background: var(--clr-white);
+            border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); min-width: 200px; z-index: 999;
+            overflow: hidden; border: 1px solid var(--clr-border);
+        }
+        .site-navbar .profile-dropdown.show { display: block; }
+        .site-navbar .dropdown-header {
+            display: flex; align-items: center; gap: 10px; padding: .85rem 1.1rem;
+            border-bottom: 1px solid var(--clr-border); background: var(--clr-bg);
+        }
+        .site-navbar .dh-name  { font-size: .85rem; font-weight: 600; color: var(--clr-text); }
+        .site-navbar .dh-email { font-size: .7rem; color: var(--clr-muted); margin-top: 2px; }
+        .site-navbar .profile-dropdown a {
+            display: flex; align-items: center; gap: 8px; padding: 10px 1.1rem; font-size: .8rem;
+            color: var(--clr-text); text-decoration: none; transition: background .2s;
+        }
+        .site-navbar .profile-dropdown a:hover { background: var(--clr-bg); color: var(--clr-brand); }
+        .site-navbar .logout-link       { color: #e24b4a !important; }
+        .site-navbar .logout-link:hover { background: #fff5f5 !important; color: #e24b4a !important; }
+        @media (max-width: 900px) {
+            .site-navbar .nav-links { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ── SITE NAVBAR (guest-facing top nav, adjusted for admin panel) ── -->
+<div class="site-navbar" th:insert="~{navbar :: navbar}">
+    <nav>
+        <div class="logo">
+            <a href="/" style="display:flex; align-items:center; gap:10px; text-decoration:none;">
+                <i class="fa-solid fa-house" style="font-size:1.5rem; color:#c9a84c;"></i>
+                <span style="font-family:'Fraunces',Georgia,serif; line-height:1.1;">
+                    <span style="display:block; font-weight:700; font-size:1.05rem; letter-spacing:1px; color:#1c2b1e;">XANSA</span>
+                    <span style="display:block; font-size:.62rem; letter-spacing:3px; color:#6b7e6d;">STAY</span>
+                </span>
+            </a>
+        </div>
+
+        <div class="nav-links">
+            <a href="/" class="active">Home</a>
+            <a href="/rooms">Rooms</a>
+            <a href="/services">Services</a>
+            <a href="/gallery">Gallery</a>
+            <a href="/contact">Contact</a>
+            <a href="/admin/dashboard">Dashboard</a>
+        </div>
+
+        <div class="nav-right">
+            <div class="profile-dropdown-wrapper" onclick="document.getElementById('siteNavProfileDropdown').classList.toggle('show')">
+                <div class="profile-trigger">
+                    <div class="profile-info">
+                        <span class="profile-name">Admin Control</span>
+                        <span class="profile-role">Admin</span>
+                    </div>
+                    <div class="profile-avatar"><i class="fa-solid fa-user"></i></div>
+                    <i class="fa-solid fa-chevron-down" style="font-size:.65rem; color:var(--clr-muted);"></i>
+                </div>
+                <div class="profile-dropdown" id="siteNavProfileDropdown">
+                    <div class="dropdown-header">
+                        <div class="profile-avatar large"><i class="fa-solid fa-user"></i></div>
+                        <div>
+                            <div class="dh-name">Admin Control</div>
+                            <div class="dh-email">admin@xansastays.com</div>
+                        </div>
+                    </div>
+                    <a href="/admin/dashboard#profile"><i class="fa-solid fa-id-badge"></i> My Profile</a>
+                    <a href="/admin/dashboard"><i class="fa-solid fa-gauge"></i> Dashboard</a>
+                    <a href="/logout" class="logout-link"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+</div>
+
+<div class="overlay" id="overlay" onclick="closeSidebar()"></div>
+
+<!-- ── DELETE CONFIRM MODAL ──────────────── -->
+<div class="del-modal-overlay" id="delModalOverlay">
+    <div class="del-modal">
+        <div class="del-icon">🗑️</div>
+        <h3>Room Delete Karein?</h3>
+        <p>Yeh action permanent hai. Room ki saari images aur amenities bhi database se delete ho jayengi.</p>
+        <div class="del-modal-btns">
+            <button class="del-btn-cancel" onclick="closeDelModal()">Cancel</button>
+            <button class="del-btn-confirm" id="delConfirmBtn">Haan, Delete Karo</button>
+        </div>
+    </div>
+</div>
+
+<!-- ── SIDEBAR ────────────────────────────── -->
+<nav class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+        <div>
+            <div class="brand">XansaStays</div>
+            <div class="tagline">Admin Portal</div>
+        </div>
+        <button class="sidebar-close" onclick="closeSidebar()">✕</button>
+    </div>
+
+    <div class="nav-section">
+        <div class="nav-label">Overview</div>
+        <a class="nav-item active" href="#" data-page="dashboard"><span class="icon"><i class="fa-solid fa-house"></i></span> Dashboard</a>
+    </div>
+    <div class="nav-section">
+        <div class="nav-label">Management</div>
+        <a class="nav-item" href="#" data-page="rooms"><span class="icon"><i class="fa-solid fa-bed"></i></span> Rooms</a>
+        <a class="nav-item" href="#" data-page="all-rooms"><span class="icon"><i class="fa-solid fa-hotel"></i></span> Room Cards</a>
+        <a class="nav-item" href="/admin/rooms/addroom"><span class="icon"><i class="fa-solid fa-plus"></i></span> Add Room</a>
+        <a class="nav-item" href="#" data-page="bookings"><span class="icon"><i class="fa-solid fa-clipboard-list"></i></span> Bookings</a>
+        <a class="nav-item" href="#" data-page="checkout"><span class="icon"><i class="fa-solid fa-door-open"></i></span> Checkout</a>
+        <a class="nav-item" href="#" data-page="guests"><span class="icon"><i class="fa-solid fa-users"></i></span> Guests</a>
+        <a class="nav-item" href="#" data-page="reviews"><span class="icon"><i class="fa-solid fa-star"></i></span> Reviews</a>
+        <a class="nav-item" href="#" data-page="coupons"><span class="icon"><i class="fa-solid fa-ticket"></i></span> Coupons</a>
+    </div>
+
+
+    <div class="sidebar-bottom">
+        <div class="admin-chip" data-page="profile" style="cursor:pointer;" title="Admin Profile">
+            <div class="avatar" id="sidebarAvatar">AD</div>
+            <div class="admin-info">
+                <div class="name">Admin</div>
+                <div class="role">Super Admin</div>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<!-- ── MAIN ───────────────────────────────── -->
+<div class="main">
+
+    <!-- TOPBAR -->
+    <div class="topbar">
+        <div class="topbar-left">
+            <button class="hamburger" onclick="openSidebar()" aria-label="Menu">
+                <span></span><span></span><span></span>
+            </button>
+            <div class="topbar-title">Overview</div>
+        </div>
+        <div class="topbar-meta">
+            <span class="date-badge" style="display:none">📅 Friday, 26 June 2026</span>
+            <div class="notif-wrapper">
+                <div class="notif" onclick="toggleNotifDropdown(event)" aria-label="Notifications">
+                    <i class="fa-solid fa-bell"></i>
+                    <span class="notif-dot" id="notifDot" style="display:none;"></span>
+                </div>
+                <div class="notif-dropdown" id="notifDropdown">
+                    <div class="notif-dropdown-header">
+                        <div class="t">Notifications</div>
+                        <div class="clear" onclick="clearNotifications()">Mark all read</div>
+                    </div>
+                    <div class="notif-list" id="notifList">
+                        <div class="notif-empty">Loading…</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CONTENT -->
+    <div class="content">
+
+        <!-- ══════════════ PAGE: DASHBOARD (HOME) ══════════════ -->
+        <div class="page active" id="page-dashboard">
+
+            <!-- Greeting (mobile only) -->
+            <div class="greeting-banner">
+                <div class="gday">Good Morning</div>
+                <div class="gname">Welcome, Admin 👋</div>
+                <div class="gdate">📅 Friday, 26 June 2026</div>
+            </div>
+
+            <!-- STATS -->
+            <div class="stats-grid">
+
+                <div class="stat-card gold">
+                    <div class="stat-icon"><i class="fa-solid fa-users"></i></div>
+                    <div class="stat-label">Total Guests</div>
+                    <div class="stat-value" id="totalUsers">0</div>
+                </div>
+
+                <div class="stat-card green">
+                    <div class="stat-icon"><i class="fa-solid fa-bed"></i></div>
+                    <div class="stat-label">Rooms</div>
+                    <div class="stat-value" id="totalRooms">0</div>
+                    <div class="stat-sub" id="roomStatus">0 Avail · 0 Booked</div>
+                </div>
+
+                <div class="stat-card blue">
+                    <div class="stat-icon"><i class="fa-solid fa-calendar-check"></i></div>
+                    <div class="stat-label">Bookings Today</div>
+                    <div class="stat-value" id="bookingCount">0</div>
+                    <div class="stat-sub" id="bookingRevenue">Revenue: ₹0</div>
+                </div>
+
+                <div class="stat-card red">
+                    <div class="stat-icon"><i class="fa-solid fa-sack-dollar"></i></div>
+                    <div class="stat-card-top-row">
+                        <div class="stat-label">Total Revenue</div>
+                        <select class="revenue-filter" id="revenueFilter" onchange="updateRevenueFilter(this.value)">
+                            <option value="day">Today</option>
+                            <option value="week">This Week</option>
+                            <option value="month" selected>This Month</option>
+                            <option value="year">This Year</option>
+                            <option value="all">All Time</option>
+                        </select>
+                    </div>
+                    <div class="stat-value" id="totalRevenue">₹0</div>
+                    <div class="stat-sub" id="totalGuests">0 Guests Registered</div>
+                </div>
+
+            </div>
+
+            <!-- ROOM OCCUPANCY DONUT -->
+            <div class="occupancy-card">
+                <div class="occupancy-donut-wrap">
+                    <svg viewBox="0 0 120 120">
+                        <circle cx="60" cy="60" r="52" fill="none" stroke="#EDEAE0" stroke-width="14"/>
+                        <circle id="occBookedRing" cx="60" cy="60" r="52" fill="none" stroke="#8B3A2B" stroke-width="14"
+                                stroke-linecap="round" stroke-dasharray="0 327" stroke-dashoffset="0"/>
+                        <circle id="occAvailRing" cx="60" cy="60" r="52" fill="none" stroke="#3d5240" stroke-width="14"
+                                stroke-linecap="round" stroke-dasharray="0 327" stroke-dashoffset="0"/>
+                    </svg>
+                    <div class="occupancy-center">
+                        <div class="pct" id="occPercent">0%</div>
+                        <div class="pct-label">Occupied</div>
+                    </div>
+                </div>
+                <div class="occupancy-info">
+                    <div class="occupancy-title">Room Occupancy</div>
+                    <div class="occupancy-legend">
+                        <div class="occupancy-legend-row">
+                            <span class="occupancy-dot" style="background:#8B3A2B;"></span>
+                            Booked
+                            <span class="val" id="occBookedVal">0</span>
+                        </div>
+                        <div class="occupancy-legend-row">
+                            <span class="occupancy-dot" style="background:#3d5240;"></span>
+                            Available
+                            <span class="val" id="occAvailVal">0</span>
+                        </div>
+                        <div class="occupancy-legend-row">
+                            <span class="occupancy-dot" style="background:#EDEAE0;"></span>
+                            Total Rooms
+                            <span class="val" id="occTotalVal">0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- QUICK ACTIONS -->
+            <div class="section-title">Quick Actions</div>
+            <div class="actions-grid actions-section">
+
+                <a class="action-card" href="#" onclick="navigateTo('bookings');return false;">
+                    <div class="action-icon">📋</div>
+                    <div class="action-title">Total Bookings</div>
+                    <div class="action-count" id="totalBookingCount">0</div>
+                </a>
+
+                <a class="action-card" href="/admin/rooms/addroom">
+                    <div class="action-icon">🏨</div>
+                    <div class="action-title">Add Room</div>
+                </a>
+
+                <a class="action-card" href="/admin/rooms/addroom">
+                    <div class="action-icon">✨</div>
+                    <div class="action-title">Facilities</div>
+                </a>
+
+                <a class="action-card" href="#" onclick="navigateTo('guests');return false;">
+                    <div class="action-icon">👥</div>
+                    <div class="action-title">View Guests</div>
+                </a>
+
+            </div>
+
+            <!-- ANALYTICS -->
+            <div class="section-title">Analytics</div>
+            <div class="two-col-wrap">
+                <div class="card analytics-card gold-top">
+                    <div class="card-header">
+                        <div class="card-title-row">
+                            <div class="card-title-icon gold"><i class="fa-solid fa-chart-line"></i></div>
+                            <div class="card-title">Booking Trend (7 Days)</div>
+                        </div>
+                        <span class="chart-summary" id="bookingTrendSummary">—</span>
+                    </div>
+                    <div class="chart-wrap"><canvas id="bookingTrendChart"></canvas></div>
+                </div>
+                <div class="card analytics-card sage-top">
+                    <div class="card-header">
+                        <div class="card-title-row">
+                            <div class="card-title-icon sage"><i class="fa-solid fa-bed"></i></div>
+                            <div class="card-title">Rooms by Type</div>
+                        </div>
+                    </div>
+                    <div class="donut-wrap">
+                        <div class="donut-canvas-holder">
+                            <canvas id="roomTypeChart" class="donut-canvas"></canvas>
+                            <div class="donut-center">
+                                <div class="dc-value" id="roomTypeTotal">0</div>
+                                <div class="dc-label">Rooms</div>
+                            </div>
+                        </div>
+                        <div class="donut-legend" id="roomTypeLegend"></div>
+                    </div>
+                </div>
+            </div>
+
+        </div><!-- /page-dashboard -->
+
+        <!-- ══════════════ PAGE: BOOKINGS ══════════════ -->
+        <div class="page" id="page-bookings">
+            <div class="section-title">All Bookings</div>
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <div class="card-title">Bookings</div>
+                        <div class="card-sub" id="bookingsCountBadge">0 total</div>
+                    </div>
+                </div>
+
+                <div class="toolbar">
+                    <div class="tabs">
+                        <button class="tab active" onclick="filterBookings('all', this)">All</button>
+                        <button class="tab" onclick="filterBookings('confirmed', this)">Confirmed</button>
+                        <button class="tab" onclick="filterBookings('pending', this)">Pending</button>
+                        <button class="tab" onclick="filterBookings('cancelled', this)">Cancelled</button>
+                    </div>
+                    <div class="search-box">
+                        <input type="text" id="bookingSearch" placeholder="Search guest, room, booking ID..." onkeyup="searchBookings()" />
+                    </div>
+                </div>
+
+                <div class="table-wrap">
+                    <table id="bookingsTable">
+                        <thead>
+                        <tr>
+                            <th>#ID</th>
+                            <th>Guest</th>
+                            <th>Room</th>
+                            <th>Check-in</th>
+                            <th>Check-out</th>
+                            <th>Amount</th>
+                            <th>Status</th>
+                        </tr>
+                        </thead>
+                        <tbody id="bookingsTableBody">
+                        <tr><td colspan="7" style="text-align:center;padding:20px;color:#aaa;">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                    <div class="empty-state" id="bookingsEmptyState" style="display:none;">No bookings found.</div>
+                </div>
+            </div>
+        </div><!-- /page-bookings -->
+
+        <!-- ══════════════ PAGE: GUESTS ══════════════ -->
+        <div class="page" id="page-guests">
+            <div class="section-title">Guest Management</div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label"><span class="dot total"></span> Total Guests</div>
+                    <div class="stat-value" id="guestStatTotal">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label"><span class="dot active"></span> Active</div>
+                    <div class="stat-value" id="guestStatActive">0</div>
+                    <div class="stat-sub" id="guestStatActivePct">0%</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label"><span class="dot inactive"></span> Inactive</div>
+                    <div class="stat-value" id="guestStatInactive">0</div>
+                    <div class="stat-sub" id="guestStatInactivePct">0%</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <div class="card-title">All Users</div>
+                        <div class="card-sub" id="guestCountBadge">0 total</div>
+                    </div>
+                </div>
+
+                <div class="toolbar">
+                    <div class="tabs">
+                        <button class="tab active" onclick="filterGuests('all', this)">All</button>
+                        <button class="tab" onclick="filterGuests('active', this)">Active</button>
+                        <button class="tab" onclick="filterGuests('inactive', this)">Inactive</button>
+                    </div>
+                    <div class="search-box">
+                        <input type="text" id="guestSearch" placeholder="Search guests..." onkeyup="searchGuests()" />
+                    </div>
+                </div>
+
+                <div class="table-wrap">
+                    <table id="guestsTable">
+                        <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Contact</th>
+                            <th>City</th>
+                            <th>Joined</th>
+                            <th>Status</th>
+                        </tr>
+                        </thead>
+                        <tbody id="guestsTableBody">
+                        <tr><td colspan="5" style="text-align:center;padding:20px;color:#aaa;">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                    <div class="empty-state" id="guestsEmptyState" style="display:none;">No guests found.</div>
+                </div>
+            </div>
+        </div><!-- /page-guests -->
+
+        <!-- ══════════════ PAGE: ROOMS (Occupancy) ══════════════ -->
+        <div class="page" id="page-rooms">
+            <div class="section-title">Room Occupancy</div>
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">Rooms</div>
+                    <a class="card-action" href="/admin/rooms/addroom">Manage Rooms →</a>
+                </div>
+                <div class="toolbar">
+                    <div class="tabs">
+                        <button class="tab active" onclick="filterRoomOccupancy('all', this)">All</button>
+                        <button class="tab" onclick="filterRoomOccupancy('available', this)">Available</button>
+                        <button class="tab" onclick="filterRoomOccupancy('booked', this)">Booked</button>
+                        <button class="tab" onclick="filterRoomOccupancy('maintenance', this)">Maintenance</button>
+                    </div>
+                </div>
+                <div class="room-list" id="roomOccupancyList">
+                    <div style="text-align:center;padding:20px;color:#aaa;">Loading...</div>
+                </div>
+                <div class="empty-state" id="roomOccupancyEmptyState" style="display:none;">No rooms match this filter.</div>
+            </div>
+        </div><!-- /page-rooms -->
+
+        <!-- ══════════════ PAGE: ROOM CARDS ══════════════ -->
+        <div class="page" id="page-all-rooms">
+            <div class="section-title">All Rooms</div>
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">Rooms</div>
+                    <span class="card-action" id="roomCardCountBadge">0 total</span>
+                </div>
+                <div class="toolbar">
+                    <div class="tabs">
+                        <button class="tab active" onclick="filterRoomCards('all', this)">All</button>
+                        <button class="tab" onclick="filterRoomCards('available', this)">Available</button>
+                        <button class="tab" onclick="filterRoomCards('booked', this)">Booked</button>
+                        <button class="tab" onclick="filterRoomCards('maintenance', this)">Maintenance</button>
+                    </div>
+                    <div class="search-box">
+                        <input type="text" id="roomCardSearch" placeholder="Search room name, number, type..." onkeyup="searchRoomCards()" />
+                    </div>
+                </div>
+                <div class="room-card-grid" id="roomCardGrid">
+                    <div style="text-align:center;padding:20px;color:#aaa;grid-column:1/-1;">Loading...</div>
+                </div>
+                <div class="empty-state" id="roomCardsEmptyState" style="display:none;">No rooms match this filter.</div>
+            </div>
+        </div><!-- /page-all-rooms -->
+
+        <!-- ══════════════ PAGE: CHECKOUT ══════════════ -->
+        <div class="page" id="page-checkout">
+            <div class="section-title">Checkout Management</div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label"><span class="dot total"></span> Total Bookings</div>
+                    <div class="stat-value" id="checkoutStatTotal">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label"><span class="dot active"></span> Paid</div>
+                    <div class="stat-value" id="checkoutStatPaid">0</div>
+                    <div class="stat-sub" id="checkoutStatPaidPct">0%</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label"><span class="dot warn"></span> Pending</div>
+                    <div class="stat-value" id="checkoutStatPending">0</div>
+                    <div class="stat-sub" id="checkoutStatPendingPct">0%</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <div class="card-title">All Bookings</div>
+                        <div class="card-sub" id="checkoutCountBadge">0 total</div>
+                    </div>
+                </div>
+
+                <div class="toolbar">
+                    <div class="tabs">
+                        <button class="tab active" onclick="filterCheckouts('all', this)">All</button>
+                        <button class="tab" onclick="filterCheckouts('paid', this)">Paid</button>
+                        <button class="tab" onclick="filterCheckouts('pending', this)">Pending</button>
+                    </div>
+                    <div class="search-box">
+                        <input type="text" id="checkoutSearch" placeholder="Search guest, room, booking ID..." onkeyup="searchCheckouts()" />
+                    </div>
+                </div>
+
+                <div class="table-wrap">
+                    <table id="checkoutsTable">
+                        <thead>
+                        <tr>
+                            <th>Booking</th>
+                            <th>Room</th>
+                            <th>Check-in</th>
+                            <th>Check-out</th>
+                            <th>Amount</th>
+                            <th>Payment</th>
+                            <th>Status</th>
+                        </tr>
+                        </thead>
+                        <tbody id="checkoutsTableBody">
+                        <tr><td colspan="7" style="text-align:center;padding:20px;color:#aaa;">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                    <div class="empty-state" id="checkoutsEmptyState" style="display:none;">No bookings found yet.</div>
+                </div>
+            </div>
+        </div><!-- /page-checkout -->
+
+        <!-- ══════════════ PAGE: REVIEWS ══════════════ -->
+        <div class="page" id="page-reviews">
+            <div class="section-title">Guest Reviews</div>
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">All Reviews</div>
+                    <span class="card-action" id="reviewCountBadge">0 total</span>
+                </div>
+                <div class="toolbar">
+                    <div class="tabs">
+                        <button class="tab active" onclick="filterReviews('all', this)">All</button>
+                        <button class="tab" onclick="filterReviews('5', this)">★5</button>
+                        <button class="tab" onclick="filterReviews('4', this)">★4</button>
+                        <button class="tab" onclick="filterReviews('3', this)">★3</button>
+                        <button class="tab" onclick="filterReviews('2', this)">★2</button>
+                        <button class="tab" onclick="filterReviews('1', this)">★1</button>
+                    </div>
+                    <div class="search-box">
+                        <input type="text" id="reviewSearch" placeholder="Search guest, comment..." onkeyup="searchReviews()" />
+                    </div>
+                </div>
+                <div class="review-list" id="reviewsList">
+                    <div style="text-align:center;padding:20px;color:#aaa;">Loading...</div>
+                </div>
+                <div class="empty-state" id="reviewsEmptyState" style="display:none;">No reviews match this filter.</div>
+            </div>
+        </div><!-- /page-reviews -->
+
+        <!-- ══════════════ PAGE: COUPONS ══════════════ -->
+        <div class="page" id="page-coupons">
+            <div class="section-title">Coupon Management</div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">Create New Coupon</div>
+                </div>
+                <div style="padding:16px;">
+                    <div id="couponMsg" style="font-size:.8rem;margin-bottom:12px;"></div>
+                    <form id="couponForm" onsubmit="createCoupon(event)"
+                          style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+
+                        <div>
+                            <label style="display:block;font-size:.75rem;font-weight:600;color:var(--ink);margin-bottom:6px;">Coupon Code</label>
+                            <input type="text" id="couponCode" required style="width:100%;padding:10px 12px;border:1.5px solid #e2e6e2;border-radius:8px;font-size:.85rem;text-transform:uppercase;">
+                        </div>
+
+                        <div>
+                            <label style="display:block;font-size:.75rem;font-weight:600;color:var(--ink);margin-bottom:6px;">Discount Type</label>
+                            <select id="couponDiscountType" required style="width:100%;padding:10px 12px;border:1.5px solid #e2e6e2;border-radius:8px;font-size:.85rem;">
+                                <option value="PERCENTAGE">Percentage (%)</option>
+                                <option value="FLAT">Flat (₹)</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label style="display:block;font-size:.75rem;font-weight:600;color:var(--ink);margin-bottom:6px;">Discount Value</label>
+                            <input type="number" step="0.01" id="couponDiscountValue" required style="width:100%;padding:10px 12px;border:1.5px solid #e2e6e2;border-radius:8px;font-size:.85rem;">
+                        </div>
+
+                        <div>
+                            <label style="display:block;font-size:.75rem;font-weight:600;color:var(--ink);margin-bottom:6px;">Expiry Date <span style="font-weight:400;color:var(--slate);">(optional)</span></label>
+                            <input type="date" id="couponExpiry" style="width:100%;padding:10px 12px;border:1.5px solid #e2e6e2;border-radius:8px;font-size:.85rem;">
+                        </div>
+
+                        <div>
+                            <label style="display:block;font-size:.75rem;font-weight:600;color:var(--ink);margin-bottom:6px;">Min Room Price <span style="font-weight:400;color:var(--slate);">(optional)</span></label>
+                            <input type="number" step="0.01" id="couponMinPrice" style="width:100%;padding:10px 12px;border:1.5px solid #e2e6e2;border-radius:8px;font-size:.85rem;">
+                        </div>
+
+                        <div>
+                            <label style="display:block;font-size:.75rem;font-weight:600;color:var(--ink);margin-bottom:6px;">Max Room Price <span style="font-weight:400;color:var(--slate);">(optional)</span></label>
+                            <input type="number" step="0.01" id="couponMaxPrice" style="width:100%;padding:10px 12px;border:1.5px solid #e2e6e2;border-radius:8px;font-size:.85rem;">
+                        </div>
+
+                        <div style="grid-column:1/-1;">
+                            <button type="submit" style="padding:11px 22px;background:#3d5240;color:white;border:none;border-radius:8px;font-size:.85rem;font-weight:600;cursor:pointer;">Create Coupon</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">All Coupons</div>
+                    <span class="card-action" id="couponCountBadge">0 total</span>
+                </div>
+                <div class="toolbar">
+                    <div class="tabs">
+                        <button class="tab active" onclick="filterCoupons('all', this)">All</button>
+                        <button class="tab" onclick="filterCoupons('active', this)">Active</button>
+                        <button class="tab" onclick="filterCoupons('disabled', this)">Disabled</button>
+                    </div>
+                    <div class="search-box">
+                        <input type="text" id="couponSearch" placeholder="Search coupon code..." onkeyup="searchCoupons()" />
+                    </div>
+                </div>
+                <div class="table-wrap">
+                    <table id="couponsTable">
+                        <thead>
+                        <tr>
+                            <th>Code</th>
+                            <th>Type</th>
+                            <th>Value</th>
+                            <th>Price Range</th>
+                            <th>Expiry</th>
+                            <th>Used</th>
+                            <th>Total Discount</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                        </thead>
+                        <tbody id="couponsTableBody">
+                        <tr><td colspan="9" style="text-align:center;padding:20px;color:#aaa;">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                    <div class="empty-state" id="couponsEmptyState" style="display:none;">No coupons match this filter.</div>
+                </div>
+            </div>
+        </div><!-- /page-coupons -->
+
+        <!-- ══════════════ PAGE: PROFILE ══════════════ -->
+        <div class="page" id="page-profile">
+            <div class="section-title">Admin Profile</div>
+
+            <!-- ── Profile Picture Card ── -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">Profile Picture</div>
+                </div>
+                <div style="padding:18px 16px; display:flex; align-items:center; gap:18px; flex-wrap:wrap;">
+                    <div style="position:relative; flex-shrink:0;">
+                        <img id="profileAvatarImg" src="" alt="Admin"
+                             style="width:84px;height:84px;border-radius:50%;object-fit:cover;border:3px solid var(--gold);display:none;">
+                        <div id="profileAvatarFallback"
+                             style="width:84px;height:84px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1.5rem;color:var(--ink);border:3px solid var(--gold-lt);">AD</div>
+                        <label for="profilePicInput" title="Change photo"
+                               style="position:absolute;bottom:-2px;right:-2px;background:var(--ink);color:white;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:.7rem;border:2px solid white;">✏️</label>
+                        <input type="file" id="profilePicInput" accept="image/png,image/jpeg,image/webp"
+                               style="display:none;" onchange="previewAdminAvatar(this)">
+                    </div>
+                    <div>
+                        <div id="profileDisplayName" style="font-weight:700;font-size:1.05rem;color:var(--ink);font-family:var(--font-display);">Admin</div>
+                        <div style="font-size:.78rem;color:var(--slate);margin-top:2px;">Super Admin</div>
+                        <div style="font-size:.7rem;color:var(--slate);margin-top:6px;">JPG, PNG or WEBP · max 2MB</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Update Profile Card ── -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">Update Profile</div>
+                </div>
+                <div style="padding:18px 16px;">
+                    <p style="font-size:.78rem;color:var(--slate);margin-bottom:16px;">Keep your account details current so guests and staff always reach the right person.</p>
+                    <div id="profileMsg" style="font-size:.8rem;margin-bottom:12px;"></div>
+                    <form id="profileForm" onsubmit="saveProfile(event)">
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
+                            <div>
+                                <label style="display:block;font-size:.75rem;font-weight:600;color:var(--ink);margin-bottom:6px;"><span style="margin-right:5px;">👤</span>Name</label>
+                                <input type="text" id="profileName" placeholder="Your full name" style="width:100%;padding:10px 12px;border:1.5px solid #e2e6e2;border-radius:8px;font-size:.85rem;">
+                            </div>
+                            <div>
+                                <label style="display:block;font-size:.75rem;font-weight:600;color:var(--ink);margin-bottom:6px;"><span style="margin-right:5px;">📧</span>Email</label>
+                                <input type="email" id="profileEmail" placeholder="you@xansastays.com" style="width:100%;padding:10px 12px;border:1.5px solid #e2e6e2;border-radius:8px;font-size:.85rem;">
+                            </div>
+                        </div>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
+                            <div>
+                                <label style="display:block;font-size:.75rem;font-weight:600;color:var(--ink);margin-bottom:6px;"><span style="margin-right:5px;">📞</span>Contact</label>
+                                <input type="text" id="profileContact" placeholder="10-digit number" style="width:100%;padding:10px 12px;border:1.5px solid #e2e6e2;border-radius:8px;font-size:.85rem;">
+                            </div>
+                            <div>
+                                <label style="display:block;font-size:.75rem;font-weight:600;color:var(--ink);margin-bottom:6px;"><span style="margin-right:5px;">🛡️</span>Role</label>
+                                <input type="text" value="Super Admin" disabled style="width:100%;padding:10px 12px;border:1.5px solid #e2e6e2;border-radius:8px;font-size:.85rem;background:#f7f8f6;color:var(--slate);">
+                            </div>
+                        </div>
+
+                        <hr style="border:none;border-top:1px solid #F1ECDD;margin:6px 0 18px;">
+
+                        <div style="font-size:.8rem;font-weight:600;color:var(--ink);margin-bottom:12px;">🔒 Change Password</div>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px;">
+                            <div>
+                                <label style="display:block;font-size:.75rem;font-weight:600;color:var(--ink);margin-bottom:6px;">New Password</label>
+                                <input type="password" id="profilePassword" placeholder="Leave blank to keep current" style="width:100%;padding:10px 12px;border:1.5px solid #e2e6e2;border-radius:8px;font-size:.85rem;">
+                            </div>
+                            <div>
+                                <label style="display:block;font-size:.75rem;font-weight:600;color:var(--ink);margin-bottom:6px;">Confirm Password</label>
+                                <input type="password" id="profilePasswordConfirm" placeholder="Re-enter new password" style="width:100%;padding:10px 12px;border:1.5px solid #e2e6e2;border-radius:8px;font-size:.85rem;">
+                            </div>
+                        </div>
+
+                        <button type="submit" style="padding:11px 22px;background:#3d5240;color:white;border:none;border-radius:8px;font-size:.85rem;font-weight:600;cursor:pointer;">Save Changes</button>
+                    </form>
+                </div>
+            </div>
+        </div><!-- /page-profile -->
+
+    </div><!-- /content -->
+
+    <div class="footer">XansaStays Admin Portal &nbsp;·&nbsp; © 2026</div>
+</div>
+
+<!-- ── BOTTOM NAV ──────────────────────────── -->
+<nav class="bottom-nav">
+    <div class="bottom-nav-inner">
+        <a class="bn-item active" href="#" data-page="dashboard"><span class="bn-icon">🏠</span>Home</a>
+        <a class="bn-item" href="#" data-page="bookings"><span class="bn-icon">📋</span>Bookings</a>
+        <a class="bn-item" href="#" data-page="rooms"><span class="bn-icon">🏨</span>Rooms</a>
+        <a class="bn-item" href="#" data-page="guests"><span class="bn-icon">👤</span>Guests</a>
+        <a class="bn-item" onclick="openSidebar()"><span class="bn-icon">☰</span>More</a>
+    </div>
+</nav>
+
+<script>
+    /* ══════════════════════════════════════════
+       ADMIN DASHBOARD — Live Data
+    ══════════════════════════════════════════ */
+
+    // ── 1. Stats ──────────────────────────────
+    // ── Count-up animation helper for stat numbers ──
+    let dashboardRefreshTimer = null;
+
+    function startDashboardAutoRefresh() {
+        if (dashboardRefreshTimer) clearInterval(dashboardRefreshTimer);
+        dashboardRefreshTimer = setInterval(() => { loadDashboard(); loadAnalytics(); }, 20000); // live refresh every 20s
+    }
+
+    function stopDashboardAutoRefresh() {
+        if (dashboardRefreshTimer) {
+            clearInterval(dashboardRefreshTimer);
+            dashboardRefreshTimer = null;
+        }
+    }
+
+    function animateCountUp(el, target, prefix, suffix, duration) {
+        prefix = prefix || ''; suffix = suffix || ''; duration = duration || 900;
+        const raw = (el.innerText || '').replace(prefix, '').replace(suffix, '').replace(/,/g, '');
+        const start = parseFloat(raw) || 0;
+        const startTime = performance.now();
+        function step(now) {
+            const progress = Math.min((now - startTime) / duration, 1);
+            const eased = 1 - Math.pow(1 - progress, 3);
+            const current = Math.round(start + (target - start) * eased);
+            el.innerText = prefix + current.toLocaleString('en-IN') + suffix;
+            if (progress < 1) requestAnimationFrame(step);
+            else el.innerText = prefix + target.toLocaleString('en-IN') + suffix;
+        }
+        requestAnimationFrame(step);
+    }
+
+    async function loadDashboard() {
+        try {
+            const res  = await fetch('/admin/api/dashboard');
+            const data = await res.json();
+
+            animateCountUp(document.getElementById('totalUsers'), data.totalGuests || 0);
+            animateCountUp(document.getElementById('totalRooms'), data.totalRooms || 0);
+            document.getElementById('totalBookingCount').innerText = data.totalBookings || 0;
+            animateCountUp(document.getElementById('bookingCount'), data.todaysBookings || 0);
+            document.getElementById('roomStatus').innerText   =
+                (data.availableRooms || 0) + ' Avail · ' + (data.bookedRooms || 0) + ' Booked';
+
+            // Revenue — handled by the revenue period filter (see updateRevenueFilter), not here,
+            // to avoid a race between this default total and the filtered value.
+            document.getElementById('bookingRevenue').innerText =
+                'Revenue: ₹' + Number(data.todaysRevenue || 0).toLocaleString('en-IN');
+
+            // Occupancy donut
+            const avail = data.availableRooms || 0;
+            const booked = data.bookedRooms || 0;
+            const total = avail + booked;
+            const r = 52;
+            const circumference = 2 * Math.PI * r; // ≈ 326.7
+
+            const bookedLen = total > 0 ? (booked / total) * circumference : 0;
+            const availLen  = total > 0 ? (avail  / total) * circumference : 0;
+            const occPct    = total > 0 ? Math.round((booked / total) * 100) : 0;
+
+            const bookedRing = document.getElementById('occBookedRing');
+            const availRing  = document.getElementById('occAvailRing');
+            if (bookedRing && availRing) {
+                bookedRing.setAttribute('stroke-dasharray', bookedLen + ' ' + circumference);
+                bookedRing.setAttribute('stroke-dashoffset', '0');
+                availRing.setAttribute('stroke-dasharray', availLen + ' ' + circumference);
+                availRing.setAttribute('stroke-dashoffset', -bookedLen);
+            }
+            document.getElementById('occPercent').innerText   = occPct + '%';
+            document.getElementById('occBookedVal').innerText = booked;
+            document.getElementById('occAvailVal').innerText  = avail;
+            document.getElementById('occTotalVal').innerText  = total;
+
+            // Notifications — derived from today's real activity
+            renderNotifications(data);
+
+        } catch (e) {
+            console.error('Dashboard stats error:', e);
+        }
+    }
+
+    // ── Analytics charts (Booking Trend + Rooms by Type) ──
+    let bookingTrendChartInstance, roomTypeChartInstance;
+
+    function buildBookingTrendChart(bookings) {
+        const canvas = document.getElementById('bookingTrendChart');
+        if (!canvas) return;
+
+        const labels = [];
+        const counts = [];
+        const today = new Date();
+
+        for (let i = 6; i >= 0; i--) {
+            const d = new Date(today);
+            d.setDate(d.getDate() - i);
+            const key = d.getFullYear() + '-' +
+                String(d.getMonth() + 1).padStart(2, '0') + '-' +
+                String(d.getDate()).padStart(2, '0');
+            const label = d.toLocaleDateString('en-IN', { weekday: 'short' });
+            const count = (bookings || []).filter(b => b.checkInDate && b.checkInDate.startsWith(key)).length;
+            labels.push(label);
+            counts.push(count);
+        }
+
+        const summaryEl = document.getElementById('bookingTrendSummary');
+        if (summaryEl) {
+            const weekTotal  = counts.reduce((s, c) => s + c, 0);
+            const firstHalf  = counts.slice(0, 3).reduce((s, c) => s + c, 0);
+            const secondHalf = counts.slice(4).reduce((s, c) => s + c, 0);
+            const trendUp = secondHalf >= firstHalf;
+            summaryEl.textContent = (trendUp ? '▲ ' : '▼ ') + weekTotal + ' this week';
+            summaryEl.style.color = trendUp ? '#155724' : '#8B3A2B';
+            summaryEl.style.background = trendUp ? '#EAF6EE' : '#F3E3DE';
+        }
+
+        const ctx = canvas.getContext('2d');
+        const gradient = ctx.createLinearGradient(0, 0, 0, 210);
+        gradient.addColorStop(0, 'rgba(201,168,76,.35)');
+        gradient.addColorStop(1, 'rgba(201,168,76,.02)');
+
+        if (bookingTrendChartInstance) bookingTrendChartInstance.destroy();
+        bookingTrendChartInstance = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Bookings',
+                    data: counts,
+                    borderColor: '#C9A84C',
+                    borderWidth: 2.5,
+                    backgroundColor: gradient,
+                    pointBackgroundColor: '#fff',
+                    pointBorderColor: '#C9A84C',
+                    pointBorderWidth: 2,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    tension: 0.4,
+                    fill: true,
+                }],
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#1c2b1e', titleColor: '#dbbf6e', bodyColor: '#fff',
+                        borderColor: '#C9A84C', borderWidth: 1, padding: 10, cornerRadius: 8,
+                        displayColors: false,
+                    },
+                },
+                scales: {
+                    x: { grid: { display: false }, ticks: { color: '#9a978c', font: { size: 10, weight: '600' } } },
+                    y: { grid: { color: '#f0efe8' }, ticks: { color: '#9a978c', font: { size: 10 }, precision: 0 }, beginAtZero: true },
+                },
+            },
+        });
+    }
+
+    function buildRoomTypeChart(rooms) {
+        const canvas   = document.getElementById('roomTypeChart');
+        const legendEl = document.getElementById('roomTypeLegend');
+        const totalEl  = document.getElementById('roomTypeTotal');
+        if (!canvas || !legendEl) return;
+
+        const grouped = {};
+        (rooms || []).forEach(r => {
+            const t = r.roomType || 'Other';
+            grouped[t] = (grouped[t] || 0) + 1;
+        });
+
+        const labels = Object.keys(grouped);
+        const values = Object.values(grouped);
+        const palette = ['#C9A84C', '#3d5240', '#1c2b1e', '#8B3A2B', '#35506B', '#7c5cbf'];
+        const colors = labels.map((_, i) => palette[i % palette.length]);
+        const total = values.reduce((s, v) => s + v, 0);
+
+        if (totalEl) totalEl.textContent = total;
+        if (roomTypeChartInstance) roomTypeChartInstance.destroy();
+
+        if (labels.length === 0) {
+            legendEl.innerHTML = '<div style="text-align:center;color:#aaa;font-size:.75rem;">Koi room data nahi hai.</div>';
+            return;
+        }
+
+        roomTypeChartInstance = new Chart(canvas.getContext('2d'), {
+            type: 'doughnut',
+            data: {
+                labels: labels,
+                datasets: [{ data: values, backgroundColor: colors, borderWidth: 3, borderColor: '#fff', hoverOffset: 8, hoverBorderWidth: 3 }],
+            },
+            options: {
+                responsive: false, maintainAspectRatio: false, cutout: '72%',
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#1c2b1e', titleColor: '#dbbf6e', bodyColor: '#fff',
+                        borderColor: '#C9A84C', borderWidth: 1, padding: 10, cornerRadius: 8,
+                        displayColors: true,
+                        callbacks: { label: c => ` ${c.label}: ${c.formattedValue}` },
+                    },
+                },
+            },
+        });
+
+        legendEl.innerHTML = labels.map((l, i) => {
+            const niceLabel = l.charAt(0) + l.slice(1).toLowerCase();
+            const pct = Math.round((values[i] / (total || 1)) * 100);
+            return `<div class="legend-item">
+                <div class="legend-top-row">
+                    <div class="legend-left"><div class="legend-dot" style="background:${colors[i]}"></div>${niceLabel}</div>
+                    <div class="legend-right">${pct}% &nbsp;(${values[i]})</div>
+                </div>
+                <div class="legend-bar-track"><div class="legend-bar-fill" style="width:${pct}%;background:${colors[i]}"></div></div>
+            </div>`;
+        }).join('');
+    }
+
+    async function loadAnalytics() {
+        try {
+            const [bookingsRes, roomsRes] = await Promise.all([
+                fetch('/admin/api/bookings'),
+                fetch('/admin/rooms/api'),
+            ]);
+            const bookings = await bookingsRes.json();
+            const rooms    = await roomsRes.json();
+
+            buildBookingTrendChart(bookings);
+            buildRoomTypeChart(rooms);
+
+            allBookingsCache = bookings || [];
+            updateRevenueFilter();
+        } catch (e) {
+            console.error('Analytics load error:', e);
+        }
+    }
+
+    // ── Revenue period filter (Total Revenue stat card) ──
+    let allBookingsCache   = [];
+    let currentRevenueFilter = 'month';
+
+    function computeRevenueForPeriod(period) {
+        const now = new Date();
+        const bookings = (allBookingsCache || []).filter(b => b.status !== 'CANCELLED' && b.checkInDate);
+
+        const inPeriod = bookings.filter(b => {
+            const d = new Date(b.checkInDate);
+            if (isNaN(d)) return false;
+            if (period === 'day') {
+                return d.toDateString() === now.toDateString();
+            }
+            if (period === 'week') {
+                const weekAgo = new Date(now);
+                weekAgo.setDate(weekAgo.getDate() - 6);
+                weekAgo.setHours(0, 0, 0, 0);
+                return d >= weekAgo && d <= now;
+            }
+            if (period === 'month') {
+                return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+            }
+            if (period === 'year') {
+                return d.getFullYear() === now.getFullYear();
+            }
+            return true; // 'all'
+        });
+
+        const revenue = inPeriod.reduce((s, b) => s + (Number(b.totalAmount) || 0), 0);
+        return { revenue, count: inPeriod.length };
+    }
+
+    function updateRevenueFilter(period) {
+        currentRevenueFilter = period || currentRevenueFilter;
+
+        const { revenue, count } = computeRevenueForPeriod(currentRevenueFilter);
+
+        const revenueEl = document.getElementById('totalRevenue');
+        const subEl     = document.getElementById('totalGuests');
+        if (revenueEl) revenueEl.innerText = '₹' + Number(revenue).toLocaleString('en-IN');
+
+        const periodLabel = {
+            day: 'today', week: 'this week', month: 'this month', year: 'this year', all: 'all time'
+        }[currentRevenueFilter] || '';
+        if (subEl) subEl.innerText = count + ' booking' + (count === 1 ? '' : 's') + ' ' + periodLabel;
+    }
+
+    // ── Notification bell ─────────────────────
+    let notifRead = false;
+    let lastActivityItems = [];
+
+    const LAST_SEEN_KEY = 'xansa_admin_last_seen_notif_id';
+
+    function getLastSeenId() {
+        return parseInt(localStorage.getItem(LAST_SEEN_KEY) || '0', 10);
+    }
+    function setLastSeenId(id) {
+        localStorage.setItem(LAST_SEEN_KEY, String(id));
+    }
+
+    // Maps a backend activity "type" to an icon + color
+    const ACTIVITY_STYLE = {
+        BOOKING:      { icon: '📋', bg: '#FBF1E1' },
+        PAYMENT:      { icon: '💳', bg: '#EAF0EA' },
+        CHECKIN:      { icon: '🔑', bg: '#E6EDF3' },
+        CHECKOUT:     { icon: '🚪', bg: '#F3E3DE' },
+        CANCELLATION: { icon: '❌', bg: '#F3E3DE' },
+        REVIEW:       { icon: '⭐', bg: '#FBF1E1' }
+    };
+
+    function timeAgo(ts) {
+        if (!ts) return '';
+        const d = new Date(ts);
+        if (isNaN(d.getTime())) return '';
+        const diffSec = Math.floor((Date.now() - d.getTime()) / 1000);
+        if (diffSec < 60)   return 'Just now';
+        if (diffSec < 3600) return Math.floor(diffSec / 60) + ' min ago';
+        if (diffSec < 86400) return Math.floor(diffSec / 3600) + ' hr ago';
+        return Math.floor(diffSec / 86400) + ' day(s) ago';
+    }
+
+    function activityToText(a) {
+        const guest = a.guestName || 'A guest';
+        const room  = a.roomName ? ` for <strong>${a.roomName}</strong>` : '';
+        switch (a.type) {
+            case 'BOOKING':      return `<strong>${guest}</strong> booked a room${room}.`;
+            case 'PAYMENT':      return `<strong>${guest}</strong> paid <strong>₹${Number(a.amount || 0).toLocaleString('en-IN')}</strong>${room}.`;
+            case 'CHECKIN':      return `<strong>${guest}</strong> checked in${room}.`;
+            case 'CHECKOUT':     return `<strong>${guest}</strong> checked out${room}.`;
+            case 'CANCELLATION': return `<strong>${guest}</strong> cancelled a booking${room}.`;
+            case 'REVIEW':       return `<strong>${guest}</strong> left a new review.`;
+            default:             return `<strong>${guest}</strong> did something${room}.`;
+        }
+    }
+
+    // Pulls individual guest-level events (booking/payment/check-in/out/etc.)
+    // Requires a backend endpoint: GET /admin/api/activity/recent
+    // Expected JSON: [{ id, type, guestName, roomName, amount, timestamp }, ...]
+    async function loadActivityFeed() {
+        try {
+            const res = await fetch('/admin/api/activity/recent');
+            if (!res.ok) { lastActivityItems = []; return; }
+            const data = await res.json();
+            lastActivityItems = Array.isArray(data) ? data : [];
+        } catch (e) {
+            lastActivityItems = []; // endpoint not available yet — fall back to summary
+        }
+        renderNotifications(window.__lastDashboardData || {});
+    }
+
+    function renderNotifications(data) {
+        const list = document.getElementById('notifList');
+        const dot  = document.getElementById('notifDot');
+        window.__lastDashboardData = data;
+
+        let html = '';
+        let hasUnread = false;
+        const lastSeen = getLastSeenId();
+        let maxId = lastSeen;
+
+        if (lastActivityItems.length > 0) {
+            // ── Real, guest-level activity feed ──
+            const sorted = [...lastActivityItems].sort((a, b) => (b.id || 0) - (a.id || 0));
+            html += sorted.map(a => {
+                const style = ACTIVITY_STYLE[a.type] || { icon: '🔔', bg: '#F1ECDD' };
+                if ((a.id || 0) > lastSeen) hasUnread = true;
+                if ((a.id || 0) > maxId) maxId = a.id;
+                return `
+                    <div class="notif-item">
+                        <div class="ni-icon" style="background:${style.bg};">${style.icon}</div>
+                        <div class="ni-body">
+                            <div class="ni-text">${activityToText(a)}</div>
+                            <div class="ni-time">${timeAgo(a.timestamp)}</div>
+                        </div>
+                    </div>`;
+            }).join('');
+        } else {
+            // ── Fallback: derived from today's aggregate stats ──
+            const items = [];
+            const todaysBookings = data.todaysBookings || 0;
+            const todaysRevenue  = data.todaysRevenue  || 0;
+            const bookedRooms    = data.bookedRooms    || 0;
+            const availableRooms = data.availableRooms || 0;
+
+            if (todaysBookings > 0) {
+                items.push({ icon: '📋', bg: '#FBF1E1',
+                    text: `<strong>${todaysBookings}</strong> new booking${todaysBookings > 1 ? 's' : ''} came in today.` });
+            }
+            if (todaysRevenue > 0) {
+                items.push({ icon: '💰', bg: '#EAF0EA',
+                    text: `Today's revenue so far: <strong>₹${Number(todaysRevenue).toLocaleString('en-IN')}</strong>.` });
+            }
+            if (availableRooms <= 3 && (availableRooms + bookedRooms) > 0) {
+                items.push({ icon: '⚠️', bg: '#F3E3DE',
+                    text: `Only <strong>${availableRooms}</strong> room${availableRooms === 1 ? '' : 's'} left available.` });
+            }
+            if (bookedRooms > 0) {
+                items.push({ icon: '🛏️', bg: '#E6EDF3',
+                    text: `<strong>${bookedRooms}</strong> room${bookedRooms > 1 ? 's are' : ' is'} currently occupied.` });
+            }
+            if (items.length > 0) hasUnread = !notifRead;
+            html = items.length === 0
+                ? ''
+                : items.map(n => `
+                    <div class="notif-item">
+                        <div class="ni-icon" style="background:${n.bg};">${n.icon}</div>
+                        <div class="ni-body">
+                            <div class="ni-text">${n.text}</div>
+                            <div class="ni-time">Today</div>
+                        </div>
+                    </div>`).join('');
+        }
+
+        list.innerHTML = html || '<div class="notif-empty">You\'re all caught up. No new activity.</div>';
+        dot.style.display = hasUnread ? 'block' : 'none';
+
+        // Remember the highest id we've now shown, for next comparison
+        if (lastActivityItems.length > 0) window.__notifMaxId = maxId;
+    }
+
+    function toggleNotifDropdown(event) {
+        event.stopPropagation();
+        document.getElementById('notifDropdown').classList.toggle('open');
+    }
+
+    function clearNotifications() {
+        notifRead = true;
+        if (window.__notifMaxId) setLastSeenId(window.__notifMaxId);
+        document.getElementById('notifDot').style.display = 'none';
+    }
+
+    window.addEventListener('click', function (e) {
+        if (!e.target.closest('.notif-wrapper')) {
+            document.getElementById('notifDropdown').classList.remove('open');
+        }
+    });
+
+    // Poll for new guest activity every 15s, app-wide (not just on dashboard page)
+    setInterval(loadActivityFeed, 15000);
+
+    // ── Helper: format LocalDateTime string nicely ──
+    function formatDateTime(raw) {
+        if (!raw) return '-';
+        const d = new Date(raw.replace(' ', 'T'));
+        if (isNaN(d.getTime())) return raw;
+        const datePart = d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+        const timePart = d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+        return `${datePart}<br><span style="color:#888;font-size:.7rem;">${timePart}</span>`;
+    }
+
+    // ── 2. Bookings Table ─────────────────────
+    async function loadBookings() {
+        try {
+            const res      = await fetch('/admin/api/bookings');
+            const bookings = await res.json();
+            const tbody    = document.getElementById('bookingsTableBody');
+            const badge    = document.getElementById('bookingsCountBadge');
+            const empty    = document.getElementById('bookingsEmptyState');
+
+            const total = bookings ? bookings.length : 0;
+            if (badge) badge.textContent = total + ' total';
+
+            if (!bookings || bookings.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;color:#aaa;">There are no bookings right now.</td></tr>';
+                if (empty) empty.style.display = 'none';
+                return;
+            }
+
+            tbody.innerHTML = bookings.map(b => {
+                const statusKey = b.status === 'CONFIRMED' ? 'confirmed'
+                    : b.status === 'CANCELLED' ? 'cancelled'
+                        : 'pending';
+                const statusClass = b.status === 'CONFIRMED' ? 'badge-paid'
+                    : b.status === 'CANCELLED' ? 'badge-cancel'
+                        : 'badge-pending';
+                const statusLabel = b.status === 'CONFIRMED' ? 'Confirmed'
+                    : b.status === 'CANCELLED' ? 'Cancelled'
+                        : 'Pending';
+                const guestName  = b.guest  ? b.guest.name  : '-';
+                const guestEmail = b.guest  ? b.guest.email : '';
+                const roomName   = b.room   ? b.room.name   : '-';
+                const roomType   = b.room   ? b.room.roomType : '';
+                const roomNumber = b.room   ? b.room.roomNumber : '-';
+                const amount     = b.totalAmount
+                    ? '₹' + Number(b.totalAmount).toLocaleString('en-IN')
+                    : '-';
+                const searchBlob = [b.bookingId, guestName, guestEmail, roomName, roomNumber].join(' ').toLowerCase();
+
+                return `<tr data-status="${statusKey}" data-search="${searchBlob}">
+                    <td><strong>#${b.bookingId}</strong></td>
+                    <td>
+                        <div class="guest-name">${guestName}</div>
+                        <div style="font-size:.68rem;color:#9aaa9c;">${guestEmail}</div>
+                    </td>
+                    <td>
+                        <span class="room-tag">${roomType}</span>
+                        <div style="font-size:.72rem;color:#666;margin-top:2px;">Room #${roomNumber} · ${roomName}</div>
+                    </td>
+                    <td>${formatDateTime(b.checkInDate)}</td>
+                    <td>${formatDateTime(b.checkOutDate)}</td>
+                    <td style="font-weight:700;color:#3d5240;">${amount}</td>
+                    <td><span class="badge ${statusClass}">${statusLabel}</span></td>
+                </tr>`;
+            }).join('');
+
+            searchBookings();
+
+        } catch (e) {
+            console.error('Bookings load error:', e);
+            document.getElementById('bookingsTableBody').innerHTML =
+                '<tr><td colspan="7" style="text-align:center;color:#e24b4a;">Error loading bookings.</td></tr>';
+        }
+    }
+
+    function filterBookings(status, btn) {
+        document.querySelectorAll('#page-bookings .tab').forEach(t => t.classList.remove('active'));
+        btn.classList.add('active');
+        searchBookings();
+    }
+
+    function searchBookings() {
+        const searchEl = document.getElementById('bookingSearch');
+        const term = searchEl ? searchEl.value.toLowerCase().trim() : '';
+        const activeTabEl = document.querySelector('#page-bookings .tab.active');
+        const activeTab = activeTabEl ? activeTabEl.textContent.trim().toLowerCase() : 'all';
+        let visibleCount = 0;
+        document.querySelectorAll('#bookingsTable tbody tr').forEach(row => {
+            const search = row.getAttribute('data-search');
+            if (search === null) return; // skip placeholder/loading rows
+            const status = row.getAttribute('data-status') || '';
+            const matchesSearch = search.includes(term);
+            const matchesTab = activeTab === 'all' || status === activeTab;
+            const show = matchesSearch && matchesTab;
+            row.style.display = show ? '' : 'none';
+            if (show) visibleCount++;
+        });
+        const empty = document.getElementById('bookingsEmptyState');
+        if (empty) empty.style.display = visibleCount === 0 ? '' : 'none';
+    }
+
+    // ── 3. Guests Table ───────────────────────
+    async function loadGuests() {
+        try {
+            const res    = await fetch('/admin/api/guests');
+            const guests = await res.json();
+            const tbody  = document.getElementById('guestsTableBody');
+            const badge  = document.getElementById('guestCountBadge');
+            const empty  = document.getElementById('guestsEmptyState');
+
+            const total    = guests ? guests.length : 0;
+            const active   = guests ? guests.filter(g => g.status !== false).length : 0;
+            const inactive = total - active;
+            const activePct   = total === 0 ? 0 : Math.round(active   * 100 / total);
+            const inactivePct = total === 0 ? 0 : Math.round(inactive * 100 / total);
+
+            const setTxt = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+            setTxt('guestStatTotal', total);
+            setTxt('guestStatActive', active);
+            setTxt('guestStatActivePct', activePct + '%');
+            setTxt('guestStatInactive', inactive);
+            setTxt('guestStatInactivePct', inactivePct + '%');
+            if (badge) badge.textContent = total + ' total';
+
+            if (!guests || guests.length === 0) {
+                tbody.innerHTML = '';
+                if (empty) empty.style.display = 'block';
+                return;
+            }
+            if (empty) empty.style.display = 'none';
+
+            tbody.innerHTML = guests.map(g => {
+                const initial   = g.name ? g.name.charAt(0).toUpperCase() : '?';
+                const isActive  = g.status !== false;
+                const statusTag = isActive
+                    ? '<span class="badge badge-active"><span class="dot active"></span> Active</span>'
+                    : '<span class="badge badge-inactive"><span class="dot inactive"></span> Inactive</span>';
+                const avatarImg = g.profilePic
+                    ? `<img src="${g.profilePic}" alt="avatar" onerror="this.style.display='none';">`
+                    : '';
+                const searchKey = ((g.name || '') + ' ' + (g.email || '')).toLowerCase();
+
+                return `<tr data-status="${isActive ? 'active' : 'inactive'}" data-search="${searchKey}">
+                    <td>
+                        <div class="user-cell">
+                            <div class="user-avatar">${initial}${avatarImg}</div>
+                            <div>
+                                <div class="user-name">${g.name || '-'}</div>
+                                <div class="user-email">${g.email || '-'}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>${g.phone || '-'}</td>
+                    <td>${g.city || '-'}</td>
+                    <td>${g.joined && g.joined !== '-' ? g.joined : '-'}</td>
+                    <td>${statusTag}</td>
+                </tr>`;
+            }).join('');
+
+        } catch (e) {
+            console.error('Guests load error:', e);
+        }
+    }
+
+    function filterGuests(status, btn) {
+        document.querySelectorAll('#page-guests .tab').forEach(t => t.classList.remove('active'));
+        btn.classList.add('active');
+        document.querySelectorAll('#guestsTable tbody tr').forEach(row => {
+            const rowStatus = row.getAttribute('data-status');
+            row.style.display = (status === 'all' || rowStatus === status) ? '' : 'none';
+        });
+        searchGuests();
+    }
+
+    function searchGuests() {
+        const searchEl = document.getElementById('guestSearch');
+        const term = searchEl ? searchEl.value.toLowerCase().trim() : '';
+        const activeTabEl = document.querySelector('#page-guests .tab.active');
+        const activeTab = activeTabEl ? activeTabEl.textContent.trim().toLowerCase() : 'all';
+        document.querySelectorAll('#guestsTable tbody tr').forEach(row => {
+            const search = row.getAttribute('data-search') || '';
+            const status = row.getAttribute('data-status') || '';
+            const matchesSearch = search.includes(term);
+            const matchesTab = activeTab === 'all' || status === activeTab;
+            row.style.display = (matchesSearch && matchesTab) ? '' : 'none';
+        });
+    }
+
+    // ── 4. Checkout Management (all bookings) ──
+    function formatSimpleDate(raw) {
+        if (!raw) return '-';
+        const d = new Date(raw.replace(' ', 'T'));
+        if (isNaN(d.getTime())) return raw;
+        return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+    }
+
+    async function loadCheckouts() {
+        try {
+            const res       = await fetch('/admin/api/checkouts');
+            const checkouts = await res.json();
+            const tbody     = document.getElementById('checkoutsTableBody');
+            const badge     = document.getElementById('checkoutCountBadge');
+            const empty     = document.getElementById('checkoutsEmptyState');
+
+            const total   = checkouts ? checkouts.length : 0;
+            const paid    = checkouts ? checkouts.filter(c => c.paymentStatus === 'PAID').length : 0;
+            const pending = total - paid;
+            const paidPct    = total === 0 ? 0 : Math.round(paid    * 100 / total);
+            const pendingPct = total === 0 ? 0 : Math.round(pending * 100 / total);
+
+            const setTxt = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+            setTxt('checkoutStatTotal', total);
+            setTxt('checkoutStatPaid', paid);
+            setTxt('checkoutStatPaidPct', paidPct + '%');
+            setTxt('checkoutStatPending', pending);
+            setTxt('checkoutStatPendingPct', pendingPct + '%');
+            if (badge) badge.textContent = total + ' total';
+
+            if (!checkouts || checkouts.length === 0) {
+                tbody.innerHTML = '';
+                if (empty) empty.style.display = 'block';
+                return;
+            }
+            if (empty) empty.style.display = 'none';
+
+            tbody.innerHTML = checkouts.map(c => {
+                const isPaid = c.paymentStatus === 'PAID';
+                const paymentTag = isPaid
+                    ? '<span class="badge badge-active"><span class="dot active"></span> Paid</span>'
+                    : '<span class="badge badge-warn"><span class="dot warn"></span> Pending</span>';
+
+                let statusTag;
+                if (c.status === 'CONFIRMED') {
+                    statusTag = '<span class="badge badge-active"><span class="dot active"></span> Confirmed</span>';
+                } else if (c.status === 'CANCELLED') {
+                    statusTag = '<span class="badge badge-inactive"><span class="dot inactive"></span> Cancelled</span>';
+                } else {
+                    statusTag = '<span class="badge badge-warn"><span class="dot warn"></span> Pending</span>';
+                }
+
+                const initial   = c.guestName ? c.guestName.charAt(0).toUpperCase() : '?';
+                const avatarImg = c.guestProfilePic
+                    ? `<img src="${c.guestProfilePic}" alt="avatar" onerror="this.style.display='none';">`
+                    : '';
+                const amount = c.totalAmount
+                    ? '₹' + Number(c.totalAmount).toLocaleString('en-IN')
+                    : '-';
+                const searchKey = ((c.guestName || '') + ' ' + (c.roomName || '') + ' xs-' + c.bookingId).toLowerCase();
+
+                return `<tr data-status="${isPaid ? 'paid' : 'pending'}" data-search="${searchKey}">
+                    <td>
+                        <div class="user-cell">
+                            <div class="user-avatar">${initial}${avatarImg}</div>
+                            <div>
+                                <div class="user-name">${c.guestName || 'Guest'}</div>
+                                <div class="user-email">#XS-${c.bookingId}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="room-cell">
+                            <div class="rname">${c.roomName || '-'}</div>
+                            <div class="rmeta">${c.roomNumber && c.roomNumber !== '-' ? 'Room No. ' + c.roomNumber : ''}</div>
+                        </div>
+                    </td>
+                    <td>${formatSimpleDate(c.checkInDate)}</td>
+                    <td>${formatSimpleDate(c.checkOutDate)}</td>
+                    <td class="amount-val">${amount}</td>
+                    <td>${paymentTag}</td>
+                    <td>${statusTag}</td>
+                </tr>`;
+            }).join('');
+
+        } catch (e) {
+            console.error('Checkouts load error:', e);
+            document.getElementById('checkoutsTableBody').innerHTML =
+                '<tr><td colspan="7" style="text-align:center;color:#e24b4a;">Error loading checkouts.</td></tr>';
+        }
+    }
+
+    function filterCheckouts(status, btn) {
+        document.querySelectorAll('#page-checkout .tab').forEach(t => t.classList.remove('active'));
+        btn.classList.add('active');
+        document.querySelectorAll('#checkoutsTable tbody tr').forEach(row => {
+            const rowStatus = row.getAttribute('data-status');
+            row.style.display = (status === 'all' || rowStatus === status) ? '' : 'none';
+        });
+        searchCheckouts();
+    }
+
+    function searchCheckouts() {
+        const searchEl = document.getElementById('checkoutSearch');
+        const term = searchEl ? searchEl.value.toLowerCase().trim() : '';
+        const activeTabEl = document.querySelector('#page-checkout .tab.active');
+        const activeTab = activeTabEl ? activeTabEl.textContent.trim().toLowerCase() : 'all';
+        document.querySelectorAll('#checkoutsTable tbody tr').forEach(row => {
+            const search = row.getAttribute('data-search') || '';
+            const status = row.getAttribute('data-status') || '';
+            const matchesSearch = search.includes(term);
+            const matchesTab = activeTab === 'all' || status === activeTab;
+            row.style.display = (matchesSearch && matchesTab) ? '' : 'none';
+        });
+    }
+
+    // ── 5. Room Occupancy (with BOOKED badge) ─
+    async function loadRoomOccupancy() {
+        try {
+            const res   = await fetch('/admin/rooms/api');
+            const rooms = await res.json();
+            const list  = document.getElementById('roomOccupancyList');
+
+            if (!rooms || rooms.length === 0) {
+                list.innerHTML = '<div style="text-align:center;padding:20px;color:#aaa;">There is no room.</div>';
+                return;
+            }
+
+            list.innerHTML = rooms.map(r => {
+                const isBooked      = r.status === 'BOOKED';
+                const isMaintenance = r.status === 'UNDER_MAINTENANCE';
+                const statusKey = isBooked ? 'booked' : isMaintenance ? 'maintenance' : 'available';
+                const badgeHtml = isBooked
+                    ? `<span style="background:#F3E3DE;color:#dc2626;padding:2px 10px;border-radius:50px;font-size:.68rem;font-weight:700;">🔴 Booked</span>`
+                    : isMaintenance
+                        ? `<span style="background:#FEF3C7;color:#b45309;padding:2px 10px;border-radius:50px;font-size:.68rem;font-weight:700;">🔧 Maintenance</span>`
+                        : `<span style="background:#dcfce7;color:#15803d;padding:2px 10px;border-radius:50px;font-size:.68rem;font-weight:700;">✅ Available</span>`;
+
+                const price = r.pricePerDay
+                    ? '₹' + Number(r.pricePerDay).toLocaleString('en-IN') + '/d'
+                    : '-';
+
+                // Bar fill based on status
+                const barW     = isBooked ? '100%' : isMaintenance ? '60%' : '30%';
+                const barColor = isBooked ? '#8B3A2B' : isMaintenance ? '#d97706' : '#3d5240';
+
+                return `<div class="room-row" data-status="${statusKey}">
+                    <div class="room-id">R-${r.roomNumber}</div>
+                    <div class="room-type-pill">${r.roomType || '-'}</div>
+                    <div class="bar-wrap">
+                        <div class="bar-fill" style="width:${barW};background:${barColor};"></div>
+                    </div>
+                    <div class="room-price">${price}</div>
+                    ${badgeHtml}
+                </div>`;
+            }).join('');
+
+            filterRoomOccupancy(_currentRoomOccupancyFilter);
+
+        } catch (e) {
+            console.error('Room occupancy error:', e);
+        }
+    }
+
+    let _currentRoomOccupancyFilter = 'all';
+
+    function filterRoomOccupancy(status, btn) {
+        _currentRoomOccupancyFilter = status;
+        if (btn) {
+            document.querySelectorAll('#page-rooms .tab').forEach(t => t.classList.remove('active'));
+            btn.classList.add('active');
+        }
+        let visibleCount = 0;
+        document.querySelectorAll('#roomOccupancyList .room-row').forEach(row => {
+            const rowStatus = row.getAttribute('data-status');
+            const show = (status === 'all' || rowStatus === status);
+            row.style.display = show ? '' : 'none';
+            if (show) visibleCount++;
+        });
+        const empty = document.getElementById('roomOccupancyEmptyState');
+        if (empty) empty.style.display = visibleCount === 0 ? '' : 'none';
+    }
+
+    // ── Room Cards — same /admin/rooms/api data, shown as visual cards ──
+    async function loadAllRoomCards() {
+        try {
+            const res   = await fetch('/admin/rooms/api');
+            const rooms = await res.json();
+            const grid  = document.getElementById('roomCardGrid');
+            const badge = document.getElementById('roomCardCountBadge');
+
+            if (badge) badge.textContent = (rooms.length || 0) + ' total';
+
+            if (!rooms || rooms.length === 0) {
+                grid.innerHTML = '<div style="text-align:center;padding:20px;color:#aaa;grid-column:1/-1;">There is no room. <a href="/admin/rooms/addroom">Add karo →</a></div>';
+                return;
+            }
+
+            grid.innerHTML = rooms.map(r => {
+                const isBooked      = r.status === 'BOOKED';
+                const isMaintenance = r.status === 'UNDER_MAINTENANCE';
+                const statusKey = isBooked ? 'booked' : isMaintenance ? 'maintenance' : 'available';
+                const pillHtml = isBooked
+                    ? `<div class="room-card-pill booked">Booked</div>`
+                    : isMaintenance
+                        ? `<div class="room-card-pill maintenance">Maintenance</div>`
+                        : `<div class="room-card-pill available">Available</div>`;
+
+                const price = r.pricePerDay
+                    ? '₹' + Number(r.pricePerDay).toLocaleString('en-IN')
+                    : '-';
+
+                const hasImg = r.images && r.images.length > 0;
+                const imgStyle = hasImg
+                    ? `background-image:url('/admin/rooms/image/${r.images[0].imageId}');`
+                    : '';
+
+                const metaParts = [];
+                if (r.areaSqm)   metaParts.push(Number(r.areaSqm).toFixed(1) + ' m²');
+                if (r.maxGuests) metaParts.push(r.maxGuests + ' Guests');
+                if (r.roomType)  metaParts.push(r.roomType.charAt(0) + r.roomType.slice(1).toLowerCase());
+                if (r.bedType)   metaParts.push(r.bedType);
+                const metaHtml = metaParts.map(m => `<span>${m}</span>`).join('');
+
+                const searchBlob = [r.name, r.roomNumber, r.roomType, r.bedType].join(' ').toLowerCase();
+
+                return `<div class="room-card" id="roomCard-${r.roomId}" data-status="${statusKey}" data-search="${searchBlob}">
+                    <div class="room-card-img" style="${imgStyle}">
+                        ${hasImg ? '' : '🛏️'}
+                        ${pillHtml}
+                        <button class="room-card-del" title="Delete room" onclick="deleteRoomCard(${r.roomId})"><i class="fas fa-trash"></i></button>
+                    </div>
+                    <div class="room-card-body">
+                        <div class="room-card-name">${r.name || 'Room'}</div>
+                        <div class="room-card-meta">${metaHtml}</div>
+                        <div class="room-card-divider"></div>
+                        <div class="room-card-bottom">
+                            <div>
+                                <div class="room-card-price">${price}<span class="unit">/ night</span></div>
+                                <div class="room-card-taxes">Room No. ${r.roomNumber || '-'}</div>
+                            </div>
+                            <div style="display:flex;gap:8px;">
+                                <a class="room-card-edit-btn" href="/admin/rooms/addroom?edit=${r.roomId}">
+                                    <i class="fas fa-pen"></i> Edit
+                                </a>
+                                <button class="room-card-delete-btn" onclick="deleteRoomCard(${r.roomId})">
+                                    <i class="fas fa-trash"></i> Delete
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+            }).join('');
+
+            searchRoomCards();
+
+        } catch (e) {
+            console.error('Room cards error:', e);
+            const grid = document.getElementById('roomCardGrid');
+            if (grid) grid.innerHTML = '<div style="text-align:center;color:#e24b4a;grid-column:1/-1;">Error loading rooms.</div>';
+        }
+    }
+
+    function filterRoomCards(status, btn) {
+        document.querySelectorAll('#page-all-rooms .tab').forEach(t => t.classList.remove('active'));
+        btn.classList.add('active');
+        searchRoomCards();
+    }
+
+    function searchRoomCards() {
+        const searchEl = document.getElementById('roomCardSearch');
+        const term = searchEl ? searchEl.value.toLowerCase().trim() : '';
+        const activeTabEl = document.querySelector('#page-all-rooms .tab.active');
+        const activeTab = activeTabEl ? activeTabEl.textContent.trim().toLowerCase() : 'all';
+        let visibleCount = 0;
+        document.querySelectorAll('#roomCardGrid .room-card').forEach(card => {
+            const search = card.getAttribute('data-search');
+            if (search === null) return;
+            const status = card.getAttribute('data-status') || '';
+            const matchesSearch = search.includes(term);
+            const matchesTab = activeTab === 'all' || status === activeTab;
+            const show = matchesSearch && matchesTab;
+            card.style.display = show ? '' : 'none';
+            if (show) visibleCount++;
+        });
+        const empty = document.getElementById('roomCardsEmptyState');
+        if (empty) empty.style.display = visibleCount === 0 ? '' : 'none';
+    }
+
+    // ── Delete Modal helpers ───────────────────
+    let _pendingDeleteId = null;
+
+    function openDelModal(roomId) {
+        _pendingDeleteId = roomId;
+        document.getElementById('delModalOverlay').classList.add('open');
+    }
+
+    function closeDelModal() {
+        _pendingDeleteId = null;
+        document.getElementById('delModalOverlay').classList.remove('open');
+    }
+
+    document.getElementById('delConfirmBtn').addEventListener('click', async function () {
+        if (!_pendingDeleteId) return;
+        const roomId = _pendingDeleteId;
+        closeDelModal();
+
+        try {
+            const res = await fetch('/admin/rooms/delete/' + roomId, { method: 'POST' });
+            if (res.ok) {
+                const el = document.getElementById('roomCard-' + roomId);
+                if (el) {
+                    el.style.transition = 'opacity .3s, transform .3s';
+                    el.style.opacity = '0';
+                    el.style.transform = 'scale(.95)';
+                    setTimeout(() => el.remove(), 300);
+                }
+                const badge = document.getElementById('roomCardCountBadge');
+                if (badge) {
+                    setTimeout(() => {
+                        const remaining = document.querySelectorAll('.room-card').length;
+                        badge.textContent = remaining + ' total';
+                    }, 310);
+                }
+            } else {
+                alert('Room delete nahi ho payi. Dobara try karo.');
+            }
+        } catch (e) {
+            console.error('Delete room error:', e);
+            alert('Kuch gadbad ho gayi.');
+        }
+    });
+
+    // ── Delete a room directly from the card ──
+    function deleteRoomCard(roomId) {
+        openDelModal(roomId);
+    }
+
+    // ── 6. Reviews — admin can delete any review ──
+    async function loadReviews() {
+        try {
+            const res     = await fetch('/admin/api/reviews');
+            const reviews = await res.json();
+            const list    = document.getElementById('reviewsList');
+            const badge   = document.getElementById('reviewCountBadge');
+
+            if (badge) badge.textContent = (reviews.length || 0) + ' total';
+
+            if (!reviews || reviews.length === 0) {
+                list.innerHTML = '<div style="text-align:center;padding:20px;color:#aaa;">There are no reviews yet.</div>';
+                return;
+            }
+
+            list.innerHTML = reviews.map(r => {
+                const stars = '★'.repeat(r.rating || 0) + '☆'.repeat(5 - (r.rating || 0));
+                const searchBlob = [r.guestName, r.comment].join(' ').toLowerCase();
+                return `<div class="review-item" id="review-${r.reviewId}" data-rating="${r.rating || 0}" data-search="${searchBlob}">
+                    <div class="review-top">
+                        <div class="review-guest">${r.guestName || 'Guest'}</div>
+                        <div style="display:flex;align-items:center;gap:10px;">
+                            <div class="stars">${stars}</div>
+                            <button onclick="deleteReview(${r.reviewId})"
+                                    style="background:#F3E3DE;color:#8B3A2B;border:none;padding:4px 10px;border-radius:8px;font-size:.68rem;font-weight:700;cursor:pointer;">
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                    <div class="review-text">${r.comment || ''}</div>
+                </div>`;
+            }).join('');
+
+            searchReviews();
+
+        } catch (e) {
+            console.error('Reviews load error:', e);
+            document.getElementById('reviewsList').innerHTML =
+                '<div style="text-align:center;color:#e24b4a;">Error loading reviews.</div>';
+        }
+    }
+
+    function filterReviews(rating, btn) {
+        document.querySelectorAll('#page-reviews .tab').forEach(t => t.classList.remove('active'));
+        btn.classList.add('active');
+        searchReviews();
+    }
+
+    function searchReviews() {
+        const searchEl = document.getElementById('reviewSearch');
+        const term = searchEl ? searchEl.value.toLowerCase().trim() : '';
+        const activeTabEl = document.querySelector('#page-reviews .tab.active');
+        const activeTabText = activeTabEl ? activeTabEl.textContent.trim().toLowerCase() : 'all';
+        const activeRating = activeTabText === 'all' ? 'all' : activeTabText.replace('★', '');
+        let visibleCount = 0;
+        document.querySelectorAll('#reviewsList .review-item').forEach(item => {
+            const search = item.getAttribute('data-search');
+            if (search === null) return;
+            const rating = item.getAttribute('data-rating') || '';
+            const matchesSearch = search.includes(term);
+            const matchesTab = activeRating === 'all' || rating === activeRating;
+            const show = matchesSearch && matchesTab;
+            item.style.display = show ? '' : 'none';
+            if (show) visibleCount++;
+        });
+        const empty = document.getElementById('reviewsEmptyState');
+        if (empty) empty.style.display = visibleCount === 0 ? '' : 'none';
+    }
+
+    async function deleteReview(reviewId) {
+        if (!confirm('Do you want to delete this review? This action cannot be undone..')) return;
+
+        try {
+            const res = await fetch('/admin/reviews/delete/' + reviewId, { method: 'POST' });
+            if (res.ok) {
+                const el = document.getElementById('review-' + reviewId);
+                if (el) el.remove();
+                const badge = document.getElementById('reviewCountBadge');
+                if (badge) {
+                    const remaining = document.querySelectorAll('.review-item').length;
+                    badge.textContent = remaining + ' total';
+                }
+            } else {
+                alert('The review could not be deleted. Try again.');
+            }
+        } catch (e) {
+            console.error('Delete review error:', e);
+            alert('something went wrong.');
+        }
+    }
+
+    // ── 7. Admin Profile ──────────────────────
+    function getInitials(name) {
+        if (!name) return 'AD';
+        const parts = name.trim().split(/\s+/);
+        const initials = parts.length > 1
+            ? (parts[0][0] + parts[parts.length - 1][0])
+            : parts[0].slice(0, 2);
+        return initials.toUpperCase();
+    }
+
+    function setAdminAvatar(src) {
+        const img      = document.getElementById('profileAvatarImg');
+        const fallback = document.getElementById('profileAvatarFallback');
+        const sideAv   = document.getElementById('sidebarAvatar');
+        if (src) {
+            img.src = src;
+            img.style.display = 'block';
+            fallback.style.display = 'none';
+            sideAv.innerHTML = '';
+            sideAv.style.backgroundImage = `url(${src})`;
+            sideAv.style.backgroundSize = 'cover';
+            sideAv.style.backgroundPosition = 'center';
+        } else {
+            img.style.display = 'none';
+            fallback.style.display = 'flex';
+        }
+    }
+
+    function previewAdminAvatar(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = e => setAdminAvatar(e.target.result);
+            reader.readAsDataURL(input.files[0]);
+            // NOTE: this only previews the photo in the browser. To persist it,
+            // the backend's /admin/profile/update endpoint needs to accept the
+            // file (e.g. as multipart/form-data) and store/return a profilePic URL.
+        }
+    }
+
+    async function loadProfile() {
+        try {
+            const res  = await fetch('/admin/api/profile');
+            const data = await res.json();
+
+            document.getElementById('profileName').value    = data.name    || '';
+            document.getElementById('profileEmail').value   = data.email   || '';
+            document.getElementById('profileContact').value = data.contact || '';
+
+            const displayName = data.name || 'Admin';
+            document.getElementById('profileDisplayName').textContent = displayName;
+            document.getElementById('profileAvatarFallback').textContent = getInitials(displayName);
+
+            if (data.profilePic) {
+                setAdminAvatar(data.profilePic);
+            }
+        } catch (e) {
+            console.error('Profile load error:', e);
+        }
+    }
+
+    async function saveProfile(event) {
+        event.preventDefault();
+        const msgEl = document.getElementById('profileMsg');
+
+        const password = document.getElementById('profilePassword').value;
+        const confirm  = document.getElementById('profilePasswordConfirm').value;
+        if (password && password !== confirm) {
+            msgEl.style.color = '#8B3A2B';
+            msgEl.textContent = 'Passwords do not match.';
+            return;
+        }
+
+        const payload = {
+            name:     document.getElementById('profileName').value,
+            email:    document.getElementById('profileEmail').value,
+            contact:  document.getElementById('profileContact').value,
+            password: password
+        };
+
+        try {
+            const res = await fetch('/admin/profile/update', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const result = await res.json();
+
+            if (result.success) {
+                msgEl.style.color = '#3d5240';
+                msgEl.textContent = '✓ Profile update ho gayi!';
+                document.getElementById('profilePassword').value = '';
+                document.getElementById('profilePasswordConfirm').value = '';
+                document.getElementById('profileDisplayName').textContent = payload.name || 'Admin';
+                document.getElementById('profileAvatarFallback').textContent = getInitials(payload.name);
+            } else {
+                msgEl.style.color = '#8B3A2B';
+                msgEl.textContent = result.message || 'The update failed.';
+            }
+        } catch (e) {
+            msgEl.style.color = '#8B3A2B';
+            msgEl.textContent = 'Something went wrong; try again.';
+        }
+    }
+
+    // ── 8. Coupons ─────────────────────────────
+    async function loadCoupons() {
+        try {
+            const res     = await fetch('/admin/api/coupons');
+            const coupons = await res.json();
+            const body    = document.getElementById('couponsTableBody');
+            const badge   = document.getElementById('couponCountBadge');
+
+            if (badge) badge.textContent = (coupons.length || 0) + ' total';
+
+            if (!coupons || coupons.length === 0) {
+                body.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:20px;color:#aaa;">Koi coupon nahi bana abhi tak.</td></tr>';
+                return;
+            }
+
+            body.innerHTML = coupons.map(c => {
+                const valueLabel = c.discountType === 'PERCENTAGE' ? c.discountValue + '%' : '₹' + c.discountValue;
+                const range = (c.minRoomPrice || 0) + ' - ' + (c.maxRoomPrice != null ? c.maxRoomPrice : '∞');
+                const statusKey = c.isActive ? 'active' : 'disabled';
+                const statusBadge = c.isActive
+                    ? '<span class="badge badge-open">Active</span>'
+                    : '<span class="badge badge-closed">Disabled</span>';
+                const toggleBtnLabel = c.isActive ? 'Disable' : 'Enable';
+
+                return `<tr id="coupon-${c.couponId}" data-status="${statusKey}" data-search="${(c.code || '').toLowerCase()}">
+                    <td style="font-weight:600;">${c.code}</td>
+                    <td>${c.discountType}</td>
+                    <td>${valueLabel}</td>
+                    <td>₹${range}</td>
+                    <td>${c.expiryDate || '-'}</td>
+                    <td>${c.usageCount}</td>
+                    <td>₹${c.totalDiscount.toFixed(2)}</td>
+                    <td>${statusBadge}</td>
+                    <td style="white-space:nowrap;">
+                        <button onclick="toggleCoupon(${c.couponId})"
+                            style="background:#e2e6e2;color:var(--ink);border:none;padding:4px 10px;border-radius:8px;font-size:.68rem;font-weight:700;cursor:pointer;margin-right:6px;">
+                            ${toggleBtnLabel}
+                        </button>
+                        <button onclick="deleteCoupon(${c.couponId})"
+                            style="background:#F3E3DE;color:#8B3A2B;border:none;padding:4px 10px;border-radius:8px;font-size:.68rem;font-weight:700;cursor:pointer;">
+                            Delete
+                        </button>
+                    </td>
+                </tr>`;
+            }).join('');
+
+            searchCoupons();
+
+        } catch (e) {
+            console.error('Coupons load error:', e);
+            document.getElementById('couponsTableBody').innerHTML =
+                '<tr><td colspan="9" style="text-align:center;color:#e24b4a;">Error loading coupons.</td></tr>';
+        }
+    }
+
+    function filterCoupons(status, btn) {
+        document.querySelectorAll('#page-coupons .tab').forEach(t => t.classList.remove('active'));
+        btn.classList.add('active');
+        searchCoupons();
+    }
+
+    function searchCoupons() {
+        const searchEl = document.getElementById('couponSearch');
+        const term = searchEl ? searchEl.value.toLowerCase().trim() : '';
+        const activeTabEl = document.querySelector('#page-coupons .tab.active');
+        const activeTab = activeTabEl ? activeTabEl.textContent.trim().toLowerCase() : 'all';
+        let visibleCount = 0;
+        document.querySelectorAll('#couponsTable tbody tr').forEach(row => {
+            const search = row.getAttribute('data-search');
+            if (search === null) return;
+            const status = row.getAttribute('data-status') || '';
+            const matchesSearch = search.includes(term);
+            const matchesTab = activeTab === 'all' || status === activeTab;
+            const show = matchesSearch && matchesTab;
+            row.style.display = show ? '' : 'none';
+            if (show) visibleCount++;
+        });
+        const empty = document.getElementById('couponsEmptyState');
+        if (empty) empty.style.display = visibleCount === 0 ? '' : 'none';
+    }
+
+    async function createCoupon(event) {
+        event.preventDefault();
+        const msgEl = document.getElementById('couponMsg');
+
+        const payload = {
+            code:          document.getElementById('couponCode').value,
+            discountType:  document.getElementById('couponDiscountType').value,
+            discountValue: document.getElementById('couponDiscountValue').value,
+            minRoomPrice:  document.getElementById('couponMinPrice').value,
+            maxRoomPrice:  document.getElementById('couponMaxPrice').value,
+            expiryDate:    document.getElementById('couponExpiry').value
+        };
+
+        try {
+            const res    = await fetch('/admin/coupons/create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const result = await res.json();
+
+            if (result.success) {
+                msgEl.style.color = '#3d5240';
+                msgEl.textContent = '✓ ' + result.message;
+                document.getElementById('couponForm').reset();
+                loadCoupons();
+            } else {
+                msgEl.style.color = '#8B3A2B';
+                msgEl.textContent = result.message || 'Coupon create nahi ho paya.';
+            }
+        } catch (e) {
+            msgEl.style.color = '#8B3A2B';
+            msgEl.textContent = 'Something went wrong; try again.';
+        }
+    }
+
+    async function toggleCoupon(couponId) {
+        try {
+            const res = await fetch('/admin/coupons/toggle/' + couponId, { method: 'POST' });
+            if (res.ok) {
+                loadCoupons();
+            } else {
+                alert('Status update nahi ho paya.');
+            }
+        } catch (e) {
+            console.error('Toggle coupon error:', e);
+            alert('something went wrong.');
+        }
+    }
+
+    async function deleteCoupon(couponId) {
+        if (!confirm('Is coupon ko delete karna hai? This action cannot be undone.')) return;
+
+        try {
+            const res = await fetch('/admin/coupons/delete/' + couponId, { method: 'POST' });
+            if (res.ok) {
+                loadCoupons();
+            } else {
+                alert('Coupon delete nahi ho paya.');
+            }
+        } catch (e) {
+            console.error('Delete coupon error:', e);
+            alert('something went wrong.');
+        }
+    }
+
+    // ── Sidebar helpers ───────────────────────
+    function openSidebar()  { document.getElementById('sidebar').classList.add('open');    document.getElementById('overlay').classList.add('open'); }
+    function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('overlay').classList.remove('open'); }
+
+    // ── SPA Page Navigation ───────────────────
+    const PAGE_TITLES = {
+        dashboard: 'Overview',
+        bookings:  'Bookings',
+        guests:    'Guests',
+        rooms:     'Room Occupancy',
+        'all-rooms': 'Room Cards',
+        checkout:  'Checkout',
+        reviews:   'Reviews',
+        coupons:   'Coupons',
+        profile:   'Admin'
+    };
+
+    function navigateTo(page) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        const current = document.getElementById('page-' + page);
+        if (current) current.classList.add('active');
+
+        document.querySelectorAll('.nav-item[data-page]').forEach(n => n.classList.remove('active'));
+        const navEl = document.querySelector('.nav-item[data-page="' + page + '"]');
+        if (navEl) navEl.classList.add('active');
+
+        document.querySelectorAll('.bn-item[data-page]').forEach(n => n.classList.remove('active'));
+        const bnEl = document.querySelector('.bn-item[data-page="' + page + '"]');
+        if (bnEl) bnEl.classList.add('active');
+
+        const topbarTitleEl = document.querySelector('.topbar-title');
+        if (topbarTitleEl) topbarTitleEl.textContent = PAGE_TITLES[page] || 'Overview';
+
+        // URL hash ko bhi sync rakho — taaki refresh/back-forward pe sahi tab khule
+        if (window.location.hash.replace('#', '') !== page) {
+            history.replaceState(null, '', '#' + page);
+        }
+
+        // Nav sidebar ab lock rahega — koi bhi option click karo, wo apne aap band nahi hoga.
+        // Sirf ✕ button ya overlay pe click karne se hi band hoga.
+
+        // ── Lazy-load data jab wo page khule ──
+        if (page === 'dashboard') { loadDashboard(); loadAnalytics(); startDashboardAutoRefresh(); }
+        else { stopDashboardAutoRefresh(); }
+        if (page === 'bookings')  loadBookings();
+        if (page === 'guests')    loadGuests();
+        if (page === 'rooms')     loadRoomOccupancy();
+        if (page === 'all-rooms') loadAllRoomCards();
+        if (page === 'checkout')  loadCheckouts();
+        if (page === 'reviews')   loadReviews();
+        if (page === 'coupons')   loadCoupons();
+        if (page === 'profile')   loadProfile();
+    }
+
+    function bindNav() {
+        document.querySelectorAll('[data-page]').forEach(item => {
+            item.onclick = function (e) {
+                e.preventDefault();
+                navigateTo(this.dataset.page);
+            };
+        });
+    }
+
+    // ── Hash-based deep linking (e.g. /admin/dashboard#coupons) ──
+    function navigateFromHash() {
+        const page = window.location.hash.replace('#', '');
+        if (page && PAGE_TITLES[page]) {
+            navigateTo(page);
+        } else {
+            navigateTo('dashboard');
+        }
+    }
+
+    window.addEventListener('hashchange', navigateFromHash);
+
+    // ── Init ──────────────────────────────────
+    window.onload = function () {
+        bindNav();
+        navigateFromHash();
+        loadActivityFeed();
+    };
+</script>
+</body>
+</html>

@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xansa Stay — Verify OTP</title>
+    <link rel="stylesheet" th:href="@{/css/auth.css}">
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+</head>
+<body>
+
+<div class="page-wrapper">
+
+    <!-- ============================================================
+         LEFT: Image Panel
+         ============================================================ -->
+    <div class="img-panel">
+        <img src="/images/room.png" alt="Xansa Stay Luxury">
+
+        <div class="img-overlay">
+            <div class="img-brand">
+                <div class="img-brand-dot"></div>
+                <div class="img-brand-name">Xansa Stay</div>
+            </div>
+
+            <div class="img-hero">
+                <div class="img-eyebrow">Almost There</div>
+                <h1 class="img-headline">
+                    One Step From<br>Your <em>Luxury</em> Account
+                </h1>
+                <p class="img-tagline">
+                    We've sent a verification code to your email.
+                    Enter it to confirm your identity and unlock your
+                    Xansa Stay membership.
+                </p>
+
+                <div class="img-stats">
+                    <div class="img-stat">
+                        <strong>🔒</strong>
+                        <span>Secure</span>
+                    </div>
+                    <div class="img-stat">
+                        <strong>⚡</strong>
+                        <span>Quick Check</span>
+                    </div>
+                    <div class="img-stat">
+                        <strong>✦</strong>
+                        <span>One-Time Code</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================
+         RIGHT: OTP Form
+         ============================================================ -->
+    <div class="form-col">
+
+        <div class="form-topbar">
+            <div class="topbar-brand">
+                <div class="topbar-dot"></div>
+                Xansa Stay
+            </div>
+            <a href="/signup" class="topbar-link">
+                Wrong email? <strong>Sign up again →</strong>
+            </a>
+        </div>
+
+        <div class="form-scroll">
+            <div class="auth-card">
+
+                <!-- ====== Verified state ====== -->
+                <div th:if="${verifiedSuccess}" style="text-align:center;">
+                    <div class="otp-icon"
+                         style="background:linear-gradient(135deg,var(--gold) 0%,var(--gold-h) 100%);
+                                color:var(--text);">✓</div>
+                    <div class="form-heading" style="text-align:center;">
+                        <div class="form-eyebrow" style="justify-content:center;">All Done</div>
+                        <h2>Email Verified!</h2>
+                        <p>Your Xansa Stay account is ready. Redirecting you to login…</p>
+                    </div>
+                </div>
+
+                <!-- ====== OTP entry form ====== -->
+                <div th:unless="${verifiedSuccess}">
+
+                    <div class="otp-icon">✉</div>
+
+                    <div class="form-heading" style="text-align:center;">
+                        <div class="form-eyebrow" style="justify-content:center;">Email Verification</div>
+                        <h2>Verify Your Email</h2>
+                        <p>
+                            Enter the 6-digit code sent to
+                            <strong th:text="${maskedEmail}" style="color:var(--text);">y***@email.com</strong>
+                        </p>
+                    </div>
+
+                    <form id="otpForm" th:action="@{/verify-otp}" method="post" novalidate>
+
+                        <div class="otp-boxes">
+                            <input type="text" class="otp-box" maxlength="1" inputmode="numeric"
+                                   autocomplete="one-time-code" data-index="0">
+                            <input type="text" class="otp-box" maxlength="1" inputmode="numeric" data-index="1">
+                            <input type="text" class="otp-box" maxlength="1" inputmode="numeric" data-index="2">
+                            <input type="text" class="otp-box" maxlength="1" inputmode="numeric" data-index="3">
+                            <input type="text" class="otp-box" maxlength="1" inputmode="numeric" data-index="4">
+                            <input type="text" class="otp-box" maxlength="1" inputmode="numeric" data-index="5">
+                        </div>
+
+                        <input type="hidden" name="otp" id="otpHidden">
+
+                        <!-- Client-side error (shown via JS, not visible by default) -->
+                        <span class="field-error" id="otpError">Please enter the complete 6-digit code.</span>
+
+                        <!--
+                            Server-side OTP error flag — hidden, read by JS below.
+                            Replaces the old inline <span class="server-error">.
+                        -->
+                        <span id="srv-otpError"
+                              th:if="${otpError}"
+                              th:data-msg="${otpError}"
+                              style="display:none;"></span>
+
+                        <button type="submit" class="btn-auth">Verify &amp; Continue</button>
+
+                        <div class="otp-resend">
+                            <span id="resendText">Didn't receive the code? Resend in <strong id="resendTimer">5:00</strong></span>
+                            <a href="#" id="resendLink" class="forgot-link" style="display:none;">Resend Code</a>
+                        </div>
+
+                        <div class="bottom-link">
+                            <a href="/login">← Back to Login</a>
+                        </div>
+
+                    </form>
+
+                </div>
+
+            </div>
+        </div>
+
+        <div class="form-footer">
+            © 2025 <span>Xansa Stay</span>. All rights reserved.
+        </div>
+
+    </div>
+</div>
+
+<!-- Hidden flags for JS -->
+<span id="srv-otpJustSent"  th:if="${otpJustSent}"     style="display:none;"></span>
+<span id="srv-verifiedOk"   th:if="${verifiedSuccess}"  style="display:none;"></span>
+
+<!-- ============================================================
+     SweetAlert2 — Xansa luxury theme
+     ============================================================ -->
+<script>
+    (function () {
+
+        /* ── Shared Xansa mixin ── */
+        const xSwal = Swal.mixin({
+            customClass: {
+                confirmButton: 'swal-btn-confirm',
+                cancelButton:  'swal-btn-cancel',
+            },
+            buttonsStyling: false,
+            fontFamily:     'Inter, sans-serif',
+        });
+
+        /* Popup theming (shell, icon colors, buttons) now lives in
+           auth.css — not injected here — so this page looks identical
+           to login.html and signup.html instead of fighting CSS load
+           order with a page-specific <style> block. */
+
+        /* ── Server-side flash alerts ── */
+        document.addEventListener('DOMContentLoaded', function () {
+
+            /* OTP just sent */
+            if (document.getElementById('srv-otpJustSent')) {
+                xSwal.fire({
+                    icon:              'success',
+                    title:             'OTP Sent!',
+                    html:              'We\'ve emailed a <strong style="color:#3d5240;">6-digit verification code</strong> to your inbox.',
+                    timer:             2500,
+                    timerProgressBar:  true,
+                    showConfirmButton: false,
+                    allowOutsideClick: false,
+                });
+            }
+
+            /* Wrong / expired OTP */
+            const otpErrEl = document.getElementById('srv-otpError');
+            if (otpErrEl) {
+                xSwal.fire({
+                    icon:              'error',
+                    title:             'Incorrect Code',
+                    text:              otpErrEl.dataset.msg || 'The code you entered is invalid or has expired. Please try again.',
+                    confirmButtonText: 'Try Again',
+                });
+            }
+
+            /* Verification success — auto-redirect */
+            if (document.getElementById('srv-verifiedOk')) {
+                xSwal.fire({
+                    icon:              'success',
+                    title:             'Email Verified!',
+                    html:              'Welcome to <strong style="color:#3d5240;">Xansa Stay</strong>.<br>Redirecting you to login…',
+                    timer:             2500,
+                    timerProgressBar:  true,
+                    showConfirmButton: false,
+                    allowOutsideClick: false,
+                }).then(() => {
+                    window.location.href = '/login?verified=true';
+                });
+            }
+
+        });
+
+        /* ============================================================
+           OTP box behaviour: auto-advance, backspace, paste
+           ============================================================ */
+        const boxes     = document.querySelectorAll('.otp-box');
+        const form      = document.getElementById('otpForm');
+        if (!form || boxes.length === 0) return;   // verified state
+
+        const hiddenOtp = document.getElementById('otpHidden');
+        const otpErr    = document.getElementById('otpError');
+
+        function collect() {
+            let val = '';
+            boxes.forEach(b => val += b.value);
+            hiddenOtp.value = val;
+            return val;
+        }
+
+        boxes.forEach((box, i) => {
+            box.addEventListener('input', function () {
+                this.value = this.value.replace(/[^0-9]/g, '');
+                if (this.value && i < boxes.length - 1) boxes[i + 1].focus();
+                collect();
+                otpErr.classList.remove('visible');
+                this.classList.remove('is-invalid');
+            });
+
+            box.addEventListener('keydown', function (e) {
+                if (e.key === 'Backspace' && !this.value && i > 0) boxes[i - 1].focus();
+            });
+
+            box.addEventListener('paste', function (e) {
+                e.preventDefault();
+                const pasted = (e.clipboardData || window.clipboardData)
+                    .getData('text').replace(/[^0-9]/g, '');
+                pasted.split('').forEach((digit, idx) => {
+                    if (boxes[idx]) boxes[idx].value = digit;
+                });
+                collect();
+                const nextEmpty = Array.from(boxes).find(b => !b.value);
+                (nextEmpty || boxes[boxes.length - 1]).focus();
+            });
+        });
+
+        form.addEventListener('submit', function (e) {
+            const val = collect();
+            if (val.length !== 6) {
+                e.preventDefault();
+                otpErr.classList.add('visible');
+                boxes.forEach(b => { if (!b.value) b.classList.add('is-invalid'); });
+            }
+        });
+
+        if (boxes[0]) boxes[0].focus();
+
+        /* ============================================================
+           Resend countdown — 5-minute window
+           ============================================================ */
+        const timerEl  = document.getElementById('resendTimer');
+        const textEl   = document.getElementById('resendText');
+        const linkEl   = document.getElementById('resendLink');
+        if (!timerEl) return;
+
+        let seconds = 300;
+        const interval = setInterval(() => {
+            seconds--;
+            timerEl.textContent = Math.floor(seconds / 60) + ':' +
+                String(seconds % 60).padStart(2, '0');
+            if (seconds <= 0) {
+                clearInterval(interval);
+                if (textEl) textEl.style.display = 'none';
+                if (linkEl) linkEl.style.display = 'inline';
+            }
+        }, 1000);
+
+    })();
+</script>
+
+</body>
+</html>
