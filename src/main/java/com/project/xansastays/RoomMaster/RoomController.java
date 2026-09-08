@@ -37,7 +37,7 @@ public class RoomController {
         return ResponseEntity.ok(res);
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/{id:[0-9]+}")  // ✅ FIXED - sirf numbers match karega
     public ResponseEntity<?> getRoom(@PathVariable Long id) {
         Optional<RoomMaster> opt = roomRepository.findById(id);
         if (opt.isEmpty()) {
@@ -125,10 +125,7 @@ public class RoomController {
         }
     }
 
-    // ─────────────────────────────────────────
-    // PUT — Room update karo
-    // ─────────────────────────────────────────
-    @PutMapping("/{id}")
+    @PutMapping("/{id:[0-9]+}")  // ✅ FIXED - sirf numbers match karega
     public ResponseEntity<?> updateRoom(
             @PathVariable Long id,
             @RequestParam("roomNumber")  String roomNumber,
@@ -188,10 +185,7 @@ public class RoomController {
         }
     }
 
-    // ─────────────────────────────────────────
-    // DELETE — Room delete karo
-    // ─────────────────────────────────────────
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/{id:[0-9]+}")  // ✅ FIXED - sirf numbers match karega
     public ResponseEntity<?> deleteRoom(@PathVariable Long id) {
         try {
             if (!roomRepository.existsById(id)) {
@@ -204,10 +198,7 @@ public class RoomController {
         }
     }
 
-    // ─────────────────────────────────────────
-    // GET — Room ki image serve karo
-    // ─────────────────────────────────────────
-    @GetMapping("/image/{imageId}")
+    @GetMapping("/image/{imageId:[0-9]+}")  // ✅ FIXED - yahan bhi fix kiya
     public ResponseEntity<byte[]> getImage(@PathVariable Long imageId) {
         Optional<ImageMaster> opt = imageRepository.findById(imageId);
         if (opt.isEmpty()) return ResponseEntity.notFound().build();
@@ -217,9 +208,6 @@ public class RoomController {
                 .body(img.getRoomImg());
     }
 
-    // ─────────────────────────────────────────
-    // Helper — RoomMaster ko Map mein convert
-    // ─────────────────────────────────────────
     private Map<String, Object> roomToMap(RoomMaster room) {
         Map<String, Object> map = new HashMap<>();
         map.put("roomId",      room.getRoomId());
@@ -235,7 +223,6 @@ public class RoomController {
         map.put("status",      room.getStatus() != null ? room.getStatus().name() : "AVAILABLE");
         map.put("roomType",    room.getRoomType() != null ? room.getRoomType().name() : "SINGLE");
 
-        // Images ki list (sirf IDs — URL se load hongi)
         List<Map<String, Object>> imgList = new ArrayList<>();
         if (room.getImages() != null) {
             for (ImageMaster img : room.getImages()) {
