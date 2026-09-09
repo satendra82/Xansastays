@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import org.springframework.transaction.annotation.Transactional;
 import java.util.*;
 
 @RestController
@@ -23,6 +24,7 @@ public class RoomController {
 
 
     @GetMapping
+    @Transactional
     public ResponseEntity<?> getAllRooms() {
         List<RoomMaster> rooms = roomRepository.findAll();
         List<Map<String, Object>> result = new ArrayList<>();
