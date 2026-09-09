@@ -43,22 +43,20 @@ public class HomeController {
     }
 
     @GetMapping({"/", "/Homepage"})
-    @Transactional(readOnly = true)
     public String home(Model model, Authentication authentication) {
         if (authentication != null && authentication.isAuthenticated()
                 && !"anonymousUser".equals(authentication.getName())) {
             addUserInfo(authentication.getName(), model);
         }
-        List<RoomMaster> rooms = roomRepository.findAll();
-        rooms.forEach(room -> {
-            if (room.getImages() != null) room.getImages().size();
-        });
+
+        // ✅ FIXED - JOIN FETCH se images bhi saath load hongi
+        List<RoomMaster> rooms = roomRepository.findAllWithImages();
         model.addAttribute("rooms", rooms);
+
         model.addAttribute("latestReviews",
                 reviewRepository.findTop6ByHotel_HotelIdOrderByReviewIdDesc(1L));
         model.addAttribute("activePage", "home");
 
-        // NAYA — avg rating + total reviews badge ke liye
         Double avgRating = reviewRepository.findAverageRatingByHotelId(1L);
         model.addAttribute("avgRating",
                 avgRating != null ? Math.round(avgRating * 10.0) / 10.0 : 0.0);
@@ -81,7 +79,6 @@ public class HomeController {
             if (room.getImages() != null) room.getImages().size();
             model.addAttribute("room", room);
 
-
             Long hotelId = (room.getHotel() != null) ? room.getHotel().getHotelId() : 1L;
             Double avgRating = reviewRepository.findAverageRatingByHotelId(hotelId);
             model.addAttribute("avgRating",
@@ -97,7 +94,7 @@ public class HomeController {
 
     @GetMapping("/gallery")
     public String gallery(Model model) {
-        model.addAttribute("activePage", "gallery");  // ← ADD
+        model.addAttribute("activePage", "gallery");
         return "Gallery/Gallery";
     }
 
@@ -108,16 +105,14 @@ public class HomeController {
                 && !"anonymousUser".equals(authentication.getName())) {
             addUserInfo(authentication.getName(), model);
         }
-        model.addAttribute("activePage", "contact");  // ← ADD
+        model.addAttribute("activePage", "contact");
 
-        // NAYA — real average rating DB se
         Double avgRating = reviewRepository.findAverageRatingByHotelId(1L);
         model.addAttribute("avgRating",
                 avgRating != null ? Math.round(avgRating * 10.0) / 10.0 : 0.0);
 
         return "contact";
     }
-
 
     @PostMapping("/contact/send")
     public String sendMessage(
