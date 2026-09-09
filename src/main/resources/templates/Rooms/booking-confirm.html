@@ -421,7 +421,7 @@
                 <div class="room-inline">
                     <div class="room-inline-img">
                         <img th:if="${booking.room.images != null and !booking.room.images.empty}"
-                             th:src="@{/admin/rooms/image/{id}(id=${booking.room.images[0].imageId})}"
+                             th:src="@{/api/rooms/image/{id}(id=${booking.room.images[0].imageId})}"
                              th:alt="${booking.room.name}">
                         <img th:unless="${booking.room.images != null and !booking.room.images.empty}"
                              src="/images/room-deluxe.jpg" alt="Room">

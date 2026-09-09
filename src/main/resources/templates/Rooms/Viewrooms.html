@@ -578,7 +578,7 @@
                 description: r.description,
                 facilities:  r.facilities || '',
                 imageUrl:    r.images && r.images.length > 0
-                    ? `/admin/rooms/image/${r.images[0].imageId}`
+                    ? `/api/rooms/image/${r.images[0].imageId}`
                     : null
             }));
             renderRooms();
