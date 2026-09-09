@@ -43,7 +43,7 @@ public class BookingController {
     // ─────────────────────────────────────────
     // GET /rooms/{roomId} — Room Detail Page
     // ─────────────────────────────────────────
-    @GetMapping("/rooms/{roomId}")
+    @GetMapping("/rooms/{roomId:[0-9]+}")  // ✅ FIXED
     public String roomDetailPage(
             @PathVariable Long roomId,
             Authentication authentication,
@@ -195,7 +195,6 @@ public class BookingController {
             booking.setSpecialRequests(specialRequests);
             booking.setStatus(BookingMaster.Status.PENDING);
 
-
             BookingMaster saved = bookingRepository.save(booking);
             return "redirect:/booking/confirm/" + saved.getBookingId();
 
@@ -206,8 +205,7 @@ public class BookingController {
         }
     }
 
-
-    @PostMapping("/booking/pay-advance/{id}")
+    @PostMapping("/booking/pay-advance/{id:[0-9]+}")  // ✅ FIXED
     public String payAdvance(
             @PathVariable Long id,
             Authentication authentication,
@@ -244,7 +242,7 @@ public class BookingController {
     // ─────────────────────────────────────────
     // GET /checkout/{id} — Guest Checkout Page
     // ─────────────────────────────────────────
-    @GetMapping("/checkout/{id}")
+    @GetMapping("/checkout/{id:[0-9]+}")  // ✅ FIXED
     public String checkoutPage(
             @PathVariable Long id,
             Authentication authentication,
@@ -289,7 +287,7 @@ public class BookingController {
     // ─────────────────────────────────────────
     // GET /booking/confirm/{id}
     // ─────────────────────────────────────────
-    @GetMapping("/booking/confirm/{id}")
+    @GetMapping("/booking/confirm/{id:[0-9]+}")  // ✅ FIXED
     public String confirmPage(
             @PathVariable Long id,
             Authentication authentication,
@@ -349,9 +347,9 @@ public class BookingController {
     }
 
     // ─────────────────────────────────────────
-    // POST /booking/cancel/{id} — Guest cancels within 24h of booking creation
+    // POST /booking/cancel/{id}
     // ─────────────────────────────────────────
-    @PostMapping("/booking/cancel/{id}")
+    @PostMapping("/booking/cancel/{id:[0-9]+}")  // ✅ FIXED
     public String cancelBooking(
             @PathVariable Long id,
             Authentication authentication,
@@ -366,19 +364,16 @@ public class BookingController {
 
         BookingMaster booking = opt.get();
 
-        // Security check — ye booking isi guest ki honi chahiye
         if (!booking.getGuest().getGuestId().equals(guest.getGuestId())) {
             return "redirect:/mybookings";
         }
 
-        // Already cancelled/completed booking dobara cancel nahi ho sakti
         if (booking.getStatus() == BookingMaster.Status.CANCELLED
                 || booking.getStatus() == BookingMaster.Status.COMPLETED) {
             redirectAttr.addFlashAttribute("error", "This booking cannot be cancelled.");
             return "redirect:/mybookings";
         }
 
-        // ── 24h window check — booking CREATE hone ke time se ──
         LocalDateTime createdAt = booking.getCreatedAt();
         if (createdAt == null
                 || ChronoUnit.HOURS.between(createdAt, LocalDateTime.now()) >= CANCELLATION_WINDOW_HOURS) {
@@ -387,8 +382,6 @@ public class BookingController {
             return "redirect:/mybookings";
         }
 
-        // ── Refund process karo — advance aur balance dono ko UNKE APNE payment ID se refund karo ──
-        // (Ek payment ID sirf utna hi amount refund kar sakti hai jitna usme actually capture hua tha)
         double totalRefunded = 0;
         StringBuilder refundErrors = new StringBuilder();
 
@@ -431,7 +424,6 @@ public class BookingController {
         booking.setStatus(BookingMaster.Status.CANCELLED);
         bookingRepository.save(booking);
 
-        // ── Room ko wapas AVAILABLE karo ──
         RoomMaster room = booking.getRoom();
         if (room.getStatus() == RoomMaster.Status.BOOKED) {
             room.setStatus(RoomMaster.Status.AVAILABLE);
@@ -453,9 +445,9 @@ public class BookingController {
     }
 
     // ─────────────────────────────────────────
-    // POST /checkout/complete/{id} — Guest Checkout Complete
+    // POST /checkout/complete/{id}
     // ─────────────────────────────────────────
-    @PostMapping("/checkout/complete/{id}")
+    @PostMapping("/checkout/complete/{id:[0-9]+}")  // ✅ FIXED
     public String completeCheckout(
             @PathVariable Long id,
             @RequestParam(value = "paymentMethod", required = false) String paymentMethod,
@@ -471,28 +463,23 @@ public class BookingController {
 
         BookingMaster booking = opt.get();
 
-        // Security check
         if (!booking.getGuest().getGuestId().equals(guest.getGuestId())) {
             return "redirect:/mybookings";
         }
 
-        // Cancelled booking ka checkout nahi ho sakta
         if (booking.getStatus() == BookingMaster.Status.CANCELLED) {
             redirectAttr.addFlashAttribute("error", "This booking has already been cancelled.");
             return "redirect:/mybookings";
         }
 
-        // Pehle se completed hai
         if (booking.getStatus() == BookingMaster.Status.COMPLETED) {
             redirectAttr.addFlashAttribute("info", "Checkout for this booking has already been completed.");
             return "redirect:/mybookings";
         }
 
-        // Booking COMPLETED mark karo
         booking.setStatus(BookingMaster.Status.COMPLETED);
         bookingRepository.save(booking);
 
-        // Room wapas AVAILABLE karo
         RoomMaster room = booking.getRoom();
         if (room != null && room.getStatus() == RoomMaster.Status.BOOKED) {
             room.setStatus(RoomMaster.Status.AVAILABLE);
@@ -506,10 +493,8 @@ public class BookingController {
 
     // ─────────────────────────────────────────
     // AUTO-CHECKOUT — Har 5 minute me chalega
-    // CONFIRMED booking jinka checkout time nikal chuka hai
-    // unko COMPLETED mark karo aur room ko AVAILABLE karo
     // ─────────────────────────────────────────
-    @Scheduled(fixedRate = 5 * 60 * 1000) // 5 minutes
+    @Scheduled(fixedRate = 5 * 60 * 1000)
     public void autoCheckoutExpiredBookings() {
         List<BookingMaster> dueBookings =
                 bookingRepository.findByStatusAndCheckoutBefore(
@@ -528,7 +513,7 @@ public class BookingController {
     }
 
     // ─────────────────────────────────────────
-    // Helper — Session ya Spring Security dono se Users fetch
+    // Helper
     // ─────────────────────────────────────────
     private GuestMaster getGuest(Authentication authentication, HttpSession session) {
         if (authentication != null && authentication.isAuthenticated()
