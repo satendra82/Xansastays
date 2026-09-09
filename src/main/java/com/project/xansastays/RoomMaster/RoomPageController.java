@@ -55,7 +55,7 @@ public class RoomPageController {
 
         model.addAttribute("activePage", "rooms");
 
-        return "Rooms/GuestRooms";
+        return "Rooms/Guestrooms";
     }
 
     // ── Add Room Page ──
