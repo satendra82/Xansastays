@@ -22,6 +22,7 @@ public class RoomController {
     private ImageRepository imageRepository;
 
 
+    @GetMapping
     public ResponseEntity<?> getAllRooms() {
         List<RoomMaster> rooms = roomRepository.findAll();
         List<Map<String, Object>> result = new ArrayList<>();
