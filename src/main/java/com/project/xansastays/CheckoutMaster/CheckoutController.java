@@ -13,7 +13,7 @@ public class CheckoutController {
     @Autowired
     private BookingRepository bookingRepository;
 
-    @GetMapping("/{bookingId}")
+    @GetMapping("/{bookingId:[0-9]+}")  // ✅ FIXED - sirf numbers match karega
     public String checkout(@PathVariable Long bookingId, Model model) {
 
         BookingMaster booking = bookingRepository.findById(bookingId)
