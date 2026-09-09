@@ -642,6 +642,7 @@
 
     });
 
+    document.addEventListener("DOMContentLoaded", function() { const cards = document.querySelectorAll("#roomsGrid .room-card"); cards.forEach(function(card, index) { card.style.display = index < 6 ? "block" : "none"; }); });
 </script>
 </body>
 </html>
