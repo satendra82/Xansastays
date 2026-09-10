@@ -665,7 +665,7 @@
                      class="slide"
                      th:id="'slide-' + ${iStat.index}"
                      th:style="${iStat.index == 0} ? 'display:block;' : 'display:none;'">
-                    <img th:src="@{/admin/rooms/image/{id}(id=${img.imageId})}"
+                    <img th:src="@{/api/rooms/image/{id}(id=${img.imageId})}"
                          th:alt="${room.name}"
                          style="width:100%; height:260px; object-fit:cover; display:block;">
                 </div>

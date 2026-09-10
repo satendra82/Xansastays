@@ -341,7 +341,7 @@
     <div class="carousel-track" id="carouselTrack">
       <th:block th:if="${room.images != null and !room.images.empty}">
         <img th:each="img : ${room.images}"
-             th:src="@{/admin/rooms/image/{id}(id=${img.imageId})}"
+             th:src="@{/api/rooms/image/{id}(id=${img.imageId})}"
              th:alt="${room.name}" draggable="false"/>
       </th:block>
       <th:block th:unless="${room.images != null and !room.images.empty}">
@@ -466,9 +466,9 @@
       <div class="sec-label" style="margin-top:1.5rem;"><i class="fas fa-images"></i> Gallery</div>
       <div class="rd-gallery-grid">
         <img th:each="img : ${room.images}"
-             th:src="@{/admin/rooms/image/{id}(id=${img.imageId})}"
+             th:src="@{/api/rooms/image/{id}(id=${img.imageId})}"
              th:alt="${room.name}"
-             th:onclick="|window.open('/admin/rooms/image/${img.imageId}','_blank')|"/>
+             th:onclick="|window.open('/api/rooms/image/${img.imageId}','_blank')|"/>
       </div>
     </div>
   </div>

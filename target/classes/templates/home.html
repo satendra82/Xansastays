@@ -157,7 +157,7 @@
 
             <div class="room-img r1">
                 <img th:if="${room.images != null and !room.images.empty}"
-                     th:src="@{/admin/rooms/image/{id}(id=${room.images[0].imageId})}"
+                     th:src="@{/api/rooms/image/{id}(id=${room.images[0].imageId})}"
                      th:alt="${room.name}">
                 <img th:unless="${room.images != null and !room.images.empty}"
                      src="/images/room-deluxe.jpg" alt="Room">
@@ -642,6 +642,7 @@
 
     });
 
+    document.addEventListener("DOMContentLoaded", function() { const cards = document.querySelectorAll("#roomsGrid .room-card"); cards.forEach(function(card, index) { card.style.display = index < 6 ? "block" : "none"; }); });
 </script>
 </body>
 </html>
