@@ -259,10 +259,10 @@
         <div class="booking-card" th:each="booking : ${bookings}">
 
             <div class="booking-img-wrap">
-                <img th:if="${booking.room != null and booking.room.images != null and !booking.room.images.empty}"
-                     th:src="@{/api/rooms/image/{id}(id=${booking.room.images[0].imageId})}"
+                <img th:if="${booking.room != null and booking.room.imageList != null and !booking.room.imageList.empty}"
+                     th:src="@{/api/rooms/image/{id}(id=${booking.room.imageList[0].imageId})}"
                      th:alt="${booking.room.name}">
-                <img th:unless="${booking.room != null and booking.room.images != null and !booking.room.images.empty}"
+                <img th:unless="${booking.room != null and booking.room.imageList != null and !booking.room.imageList.empty}"
                      src="/images/room-deluxe.jpg" alt="Room">
 
                 <span class="status-badge"

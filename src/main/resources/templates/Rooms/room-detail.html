@@ -339,12 +339,12 @@
 <div style="background: var(--clr-bg); padding: 1.5rem 5rem 0;">
   <div class="carousel-wrap" id="carousel">
     <div class="carousel-track" id="carouselTrack">
-      <th:block th:if="${room.images != null and !room.images.empty}">
-        <img th:each="img : ${room.images}"
+      <th:block th:if="${room.imageList != null and !room.imageList.empty}">
+        <img th:each="img : ${room.imageList}"
              th:src="@{/api/rooms/image/{id}(id=${img.imageId})}"
              th:alt="${room.name}" draggable="false"/>
       </th:block>
-      <th:block th:unless="${room.images != null and !room.images.empty}">
+      <th:block th:unless="${room.imageList != null and !room.imageList.empty}">
         <div style="min-width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:6rem;background:linear-gradient(135deg,#3d5240,#4a6350)">🛏</div>
       </th:block>
     </div>
@@ -462,10 +462,10 @@
     </div>
 
     <!-- Gallery -->
-    <div th:if="${room.images != null and room.images.size() > 1}">
+    <div th:if="${room.imageList != null and room.imageList.size() > 1}">
       <div class="sec-label" style="margin-top:1.5rem;"><i class="fas fa-images"></i> Gallery</div>
       <div class="rd-gallery-grid">
-        <img th:each="img : ${room.images}"
+        <img th:each="img : ${room.imageList}"
              th:src="@{/api/rooms/image/{id}(id=${img.imageId})}"
              th:alt="${room.name}"
              th:onclick="|window.open('/api/rooms/image/${img.imageId}','_blank')|"/>

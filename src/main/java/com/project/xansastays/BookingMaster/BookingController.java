@@ -4,6 +4,7 @@ import com.project.xansastays.CouponMaster.CouponMaster;
 import com.project.xansastays.CouponMaster.CouponRepository;
 import com.project.xansastays.GuestMaster.GuestMaster;
 import com.project.xansastays.GuestMaster.GuestRepository;
+import com.project.xansastays.ImageMaster.ImageRepository;
 import com.project.xansastays.RoomMaster.RoomMaster;
 import com.project.xansastays.RoomMaster.RoomRepository;
 import com.razorpay.RazorpayClient;
@@ -24,9 +25,12 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Controller
 public class BookingController {
@@ -36,6 +40,7 @@ public class BookingController {
     @Autowired private GuestRepository   guestRepository;
     @Autowired private CouponRepository  couponRepository;
     @Autowired private RazorpayClient    razorpayClient;
+    @Autowired private ImageRepository   imageRepository;
 
     // 24h cancellation window (booking create hone ke time se)
     private static final long CANCELLATION_WINDOW_HOURS = 24;
@@ -53,6 +58,7 @@ public class BookingController {
         Optional<RoomMaster> opt = roomRepository.findById(roomId);
         if (opt.isEmpty()) return "redirect:/rooms/viewrooms";
 
+        attachImageInfo(List.of(opt.get()));
         model.addAttribute("room", opt.get());
 
         GuestMaster guest = getGuest(authentication, session);
@@ -93,6 +99,8 @@ public class BookingController {
         if (room.getStatus() == RoomMaster.Status.BOOKED) {
             return "redirect:/rooms";
         }
+
+        attachImageInfo(List.of(room));
 
         model.addAttribute("room",        room);
         model.addAttribute("guestName",   guest.getName());
@@ -306,6 +314,8 @@ public class BookingController {
             return "redirect:/rooms";
         }
 
+        if (booking.getRoom() != null) attachImageInfo(List.of(booking.getRoom()));
+
         long nights = 1;
         if (booking.getCheckin() != null && booking.getCheckout() != null) {
             nights = Math.max(1,
@@ -335,6 +345,8 @@ public class BookingController {
         if (guest == null) return "redirect:/login";
 
         var bookings = bookingRepository.findByGuestOrderByCreatedAtDesc(guest);
+        attachImageInfo(bookings.stream().map(BookingMaster::getRoom)
+                .filter(java.util.Objects::nonNull).distinct().toList());
 
         model.addAttribute("bookings",    bookings);
         model.addAttribute("guestName",   guest.getName());
@@ -510,6 +522,18 @@ public class BookingController {
                 roomRepository.save(room);
             }
         }
+    }
+
+    // ─────────────────────────────────────────
+    // Helper: rooms ke saath sirf image id/naam jodo (bytes nahi) -> room.imageList
+    // ─────────────────────────────────────────
+    private void attachImageInfo(Collection<RoomMaster> rooms) {
+        List<Long> ids = rooms.stream().map(RoomMaster::getRoomId).distinct().toList();
+        if (ids.isEmpty()) return;
+        Map<Long, List<ImageRepository.RoomImageInfo>> byRoom =
+                imageRepository.findInfoByRoomIds(ids).stream()
+                        .collect(Collectors.groupingBy(ImageRepository.RoomImageInfo::getRoomId));
+        rooms.forEach(r -> r.setImageList(byRoom.getOrDefault(r.getRoomId(), List.of())));
     }
 
     // ─────────────────────────────────────────
