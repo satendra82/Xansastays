@@ -267,10 +267,10 @@
              th:attr="data-name=${room.name},data-type=${room.roomType},data-status=${room.status}">
 
             <div class="room-img-wrap">
-                <img th:if="${room.images != null and !room.images.empty}"
-                     th:src="@{/api/rooms/image/{id}(id=${room.images[0].imageId})}"
+                <img th:if="${room.imageList != null and !room.imageList.empty}"
+                     th:src="@{/api/rooms/image/{id}(id=${room.imageList[0].imageId})}"
                      th:alt="${room.name}">
-                <img th:unless="${room.images != null and !room.images.empty}"
+                <img th:unless="${room.imageList != null and !room.imageList.empty}"
                      src="/images/room-deluxe.jpg" alt="Room">
 
                 <span class="room-badge"
