@@ -1,6 +1,7 @@
 package com.project.xansastays.RoomMaster;
 
 import com.project.xansastays.GuestMaster.GuestRepository;
+import com.project.xansastays.ImageMaster.ImageRepository;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
@@ -9,6 +10,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/rooms")
@@ -16,11 +19,14 @@ public class RoomPageController {
 
     private final RoomRepository roomRepository;
     private final GuestRepository guestRepository;
+    private final ImageRepository imageRepository;
 
     public RoomPageController(RoomRepository roomRepository,
-                              GuestRepository guestRepository) {
+                              GuestRepository guestRepository,
+                              ImageRepository imageRepository) {
         this.roomRepository  = roomRepository;
         this.guestRepository = guestRepository;
+        this.imageRepository = imageRepository;
     }
 
     // ── Helper — naam aur initial model mein daalo ──
@@ -47,12 +53,16 @@ public class RoomPageController {
 
         List<RoomMaster> rooms = roomRepository.findAll();
 
-        rooms.forEach(room -> {
-            if (room.getImages() != null) room.getImages().size();
-        });
+        // Sirf image id/naam laao (bytes nahi), aur room.imageList mein daalo
+        List<Long> ids = rooms.stream().map(RoomMaster::getRoomId).toList();
+        if (!ids.isEmpty()) {
+            Map<Long, List<ImageRepository.RoomImageInfo>> byRoom =
+                    imageRepository.findInfoByRoomIds(ids).stream()
+                            .collect(Collectors.groupingBy(ImageRepository.RoomImageInfo::getRoomId));
+            rooms.forEach(r -> r.setImageList(byRoom.getOrDefault(r.getRoomId(), List.of())));
+        }
 
         model.addAttribute("rooms", rooms);
-
         model.addAttribute("activePage", "rooms");
 
         return "Rooms/Guestrooms";

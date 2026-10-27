@@ -1,9 +1,9 @@
 package com.project.xansastays.RoomMaster;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.project.xansastays.FacilitiesMaster.FacilitiesMaster;
 import com.project.xansastays.HotelMaster.HotelMaster;
 import com.project.xansastays.ImageMaster.ImageMaster;
+import com.project.xansastays.ImageMaster.ImageRepository;
 import jakarta.persistence.*;
 
 import java.util.ArrayList;
@@ -56,7 +56,8 @@ public class RoomMaster {
     @Enumerated(EnumType.STRING)
     private RoomType roomType;
 
-    @ManyToOne
+    // LAZY: har room ke saath hotel ki alag query nahi chalegi
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "hotel_id")
     private HotelMaster hotel;
 
@@ -64,9 +65,13 @@ public class RoomMaster {
     @OneToMany(mappedBy = "room", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<ImageMaster> images = new ArrayList<>();
 
+    // DB column nahi: sirf image ki id/naam (bytes nahi). Controller isse bharta hai.
+    @Transient
     @JsonIgnore
-    @OneToOne(mappedBy = "room", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private FacilitiesMaster facility;
+    private List<ImageRepository.RoomImageInfo> imageList = new ArrayList<>();
+
+    // NOTE: 'facility' (@OneToOne mappedBy) hata diya, wo har room par extra query chalata tha.
+    // Facility chahiye to FacilitiesRepository.findByRoomId(roomId) use karo.
 
     public RoomMaster() {}
 
@@ -112,6 +117,6 @@ public class RoomMaster {
     public List<ImageMaster> getImages() { return images; }
     public void setImages(List<ImageMaster> images) { this.images = images; }
 
-    public FacilitiesMaster getFacility() { return facility; }
-    public void setFacility(FacilitiesMaster facility) { this.facility = facility; }
+    public List<ImageRepository.RoomImageInfo> getImageList() { return imageList; }
+    public void setImageList(List<ImageRepository.RoomImageInfo> imageList) { this.imageList = imageList; }
 }

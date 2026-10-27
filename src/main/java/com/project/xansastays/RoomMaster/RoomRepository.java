@@ -1,7 +1,6 @@
 package com.project.xansastays.RoomMaster;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -15,7 +14,5 @@ public interface RoomRepository extends JpaRepository<RoomMaster, Long> {
 
     long countByStatus(RoomMaster.Status status);
 
-    // ✅ FIXED - images ko eagerly load karo ek hi query mein
-    @Query("SELECT DISTINCT r FROM RoomMaster r LEFT JOIN FETCH r.images")
-    List<RoomMaster> findAllWithImages();
+    // findAllWithImages() hata diya: wo saari images ke bytes memory mein laata tha (OutOfMemory ki wajah)
 }

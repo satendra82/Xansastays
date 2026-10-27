@@ -1,15 +1,17 @@
 package com.project.xansastays.RoomMaster;
 
+import com.project.xansastays.FacilitiesMaster.FacilitiesRepository;
 import com.project.xansastays.ImageMaster.ImageMaster;
 import com.project.xansastays.ImageMaster.ImageRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import org.springframework.transaction.annotation.Transactional;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/rooms")
@@ -22,16 +24,24 @@ public class RoomController {
     @Autowired
     private ImageRepository imageRepository;
 
+    @Autowired
+    private FacilitiesRepository facilitiesRepository;
 
     @GetMapping
-    @Transactional
+    @Transactional(readOnly = true)
     public ResponseEntity<?> getAllRooms() {
         List<RoomMaster> rooms = roomRepository.findAll();
-        List<Map<String, Object>> result = new ArrayList<>();
+        List<Long> ids = rooms.stream().map(RoomMaster::getRoomId).toList();
 
+        // Ek hi query mein saare rooms ki image info (bytes ke bina)
+        Map<Long, List<ImageRepository.RoomImageInfo>> imgByRoom = ids.isEmpty()
+                ? Map.of()
+                : imageRepository.findInfoByRoomIds(ids).stream()
+                .collect(Collectors.groupingBy(ImageRepository.RoomImageInfo::getRoomId));
+
+        List<Map<String, Object>> result = new ArrayList<>();
         for (RoomMaster room : rooms) {
-            Map<String, Object> map = roomToMap(room);
-            result.add(map);
+            result.add(roomToMap(room, imgByRoom.getOrDefault(room.getRoomId(), List.of())));
         }
 
         Map<String, Object> res = new HashMap<>();
@@ -40,7 +50,8 @@ public class RoomController {
         return ResponseEntity.ok(res);
     }
 
-    @GetMapping("/{id:[0-9]+}")  // ✅ FIXED - sirf numbers match karega
+    @GetMapping("/{id:[0-9]+}")
+    @Transactional(readOnly = true)
     public ResponseEntity<?> getRoom(@PathVariable Long id) {
         Optional<RoomMaster> opt = roomRepository.findById(id);
         if (opt.isEmpty()) {
@@ -48,20 +59,20 @@ public class RoomController {
         }
         Map<String, Object> res = new HashMap<>();
         res.put("success", true);
-        res.put("room", roomToMap(opt.get()));
+        res.put("room", roomToMap(opt.get(), imageRepository.findInfoByRoomIds(List.of(id))));
         return ResponseEntity.ok(res);
     }
 
     @GetMapping("/stats")
     public ResponseEntity<?> getStats() {
-        long total       = roomRepository.count();
-        long available   = roomRepository.countByStatus(RoomMaster.Status.AVAILABLE);
-        long booked      = roomRepository.countByStatus(RoomMaster.Status.BOOKED);
+        long total     = roomRepository.count();
+        long available = roomRepository.countByStatus(RoomMaster.Status.AVAILABLE);
+        long booked    = roomRepository.countByStatus(RoomMaster.Status.BOOKED);
 
         Map<String, Object> stats = new HashMap<>();
-        stats.put("total",     total);
-        stats.put("available", available);
-        stats.put("occupied",  booked);
+        stats.put("total",       total);
+        stats.put("available",   available);
+        stats.put("occupied",    booked);
         stats.put("maintenance", 0);
 
         Map<String, Object> res = new HashMap<>();
@@ -101,7 +112,6 @@ public class RoomController {
 
             RoomMaster savedRoom = roomRepository.save(room);
 
-            // Images save karo
             if (images != null && !images.isEmpty()) {
                 for (MultipartFile file : images) {
                     if (!file.isEmpty()) {
@@ -124,11 +134,11 @@ public class RoomController {
         } catch (IOException e) {
             return ResponseEntity.status(500).body(Map.of("success", false, "message", "Image save nahi hui: " + e.getMessage()));
         } catch (Exception e) {
-            return ResponseEntity.status(500).body(Map.of("success", false, "message", e.getMessage()));
+            return ResponseEntity.status(500).body(Map.of("success", false, "message", String.valueOf(e.getMessage())));
         }
     }
 
-    @PutMapping("/{id:[0-9]+}")  // ✅ FIXED - sirf numbers match karega
+    @PutMapping("/{id:[0-9]+}")
     public ResponseEntity<?> updateRoom(
             @PathVariable Long id,
             @RequestParam("roomNumber")  String roomNumber,
@@ -165,7 +175,6 @@ public class RoomController {
 
             roomRepository.save(room);
 
-            // Nayi images add karo
             if (images != null && !images.isEmpty()) {
                 for (MultipartFile file : images) {
                     if (!file.isEmpty()) {
@@ -184,34 +193,38 @@ public class RoomController {
         } catch (IOException e) {
             return ResponseEntity.status(500).body(Map.of("success", false, "message", "Image error: " + e.getMessage()));
         } catch (Exception e) {
-            return ResponseEntity.status(500).body(Map.of("success", false, "message", e.getMessage()));
+            return ResponseEntity.status(500).body(Map.of("success", false, "message", String.valueOf(e.getMessage())));
         }
     }
 
-    @DeleteMapping("/{id:[0-9]+}")  // ✅ FIXED - sirf numbers match karega
+    @DeleteMapping("/{id:[0-9]+}")
     public ResponseEntity<?> deleteRoom(@PathVariable Long id) {
         try {
             if (!roomRepository.existsById(id)) {
                 return ResponseEntity.status(404).body(Map.of("success", false, "message", "Room nahi mili"));
             }
+            // Pehle child records hatao (facility relation ab RoomMaster mein cascade nahi hai)
+            facilitiesRepository.deleteByRoomId(id);
+            imageRepository.deleteByRoomId(id);
             roomRepository.deleteById(id);
             return ResponseEntity.ok(Map.of("success", true, "message", "Room delete ho gaya!"));
         } catch (Exception e) {
-            return ResponseEntity.status(500).body(Map.of("success", false, "message", e.getMessage()));
+            return ResponseEntity.status(500).body(Map.of("success", false, "message", String.valueOf(e.getMessage())));
         }
     }
 
-    @GetMapping("/image/{imageId:[0-9]+}")  // ✅ FIXED - yahan bhi fix kiya
+    @GetMapping("/image/{imageId:[0-9]+}")
     public ResponseEntity<byte[]> getImage(@PathVariable Long imageId) {
         Optional<ImageMaster> opt = imageRepository.findById(imageId);
         if (opt.isEmpty()) return ResponseEntity.notFound().build();
         ImageMaster img = opt.get();
         return ResponseEntity.ok()
                 .header("Content-Type", img.getContentType() != null ? img.getContentType() : "image/jpeg")
+                .header("Cache-Control", "public, max-age=86400")
                 .body(img.getRoomImg());
     }
 
-    private Map<String, Object> roomToMap(RoomMaster room) {
+    private Map<String, Object> roomToMap(RoomMaster room, List<ImageRepository.RoomImageInfo> images) {
         Map<String, Object> map = new HashMap<>();
         map.put("roomId",      room.getRoomId());
         map.put("roomNumber",  room.getRoomNumber());
@@ -227,18 +240,16 @@ public class RoomController {
         map.put("roomType",    room.getRoomType() != null ? room.getRoomType().name() : "SINGLE");
 
         List<Map<String, Object>> imgList = new ArrayList<>();
-        if (room.getImages() != null) {
-            for (ImageMaster img : room.getImages()) {
-                Map<String, Object> imgMap = new HashMap<>();
-                imgMap.put("imageId",  img.getImageId());
-                imgMap.put("fileName", img.getFileName());
-                imgMap.put("url",      "/api/rooms/image/" + img.getImageId());
-                imgList.add(imgMap);
-            }
+        for (ImageRepository.RoomImageInfo img : images) {
+            Map<String, Object> imgMap = new HashMap<>();
+            imgMap.put("imageId",  img.getImageId());
+            imgMap.put("fileName", img.getFileName());
+            imgMap.put("url",      "/api/rooms/image/" + img.getImageId());
+            imgList.add(imgMap);
         }
-        map.put("images",      imgList);
-        map.put("imageCount",  imgList.size());
-        map.put("primaryImage", imgList.isEmpty() ? null : "/api/rooms/image/" + imgList.getFirst().get("imageId"));
+        map.put("images",       imgList);
+        map.put("imageCount",   imgList.size());
+        map.put("primaryImage", imgList.isEmpty() ? null : imgList.get(0).get("url"));
 
         return map;
     }

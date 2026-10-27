@@ -13,7 +13,7 @@ public class FacilitiesMaster {
     private Long facilityId;
 
     @JsonIgnore
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "room_id")
     private RoomMaster room;
 
