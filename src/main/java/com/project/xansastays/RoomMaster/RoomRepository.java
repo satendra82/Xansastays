@@ -14,5 +14,9 @@ public interface RoomRepository extends JpaRepository<RoomMaster, Long> {
 
     long countByStatus(RoomMaster.Status status);
 
-    // findAllWithImages() hata diya: wo saari images ke bytes memory mein laata tha (OutOfMemory ki wajah)
+    // HomeController.java (line 53) isse call karta hai, isliye build ke liye rakha hai.
+    // Ye ab images join NAHI karta (memory bachane ke liye), sirf rooms deta hai.
+    default List<RoomMaster> findAllWithImages() {
+        return findAll();
+    }
 }

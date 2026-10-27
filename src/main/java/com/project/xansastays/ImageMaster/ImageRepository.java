@@ -25,4 +25,7 @@ public interface ImageRepository extends JpaRepository<ImageMaster, Long> {
     @Transactional
     @Query("delete from ImageMaster i where i.room.roomId = :roomId")
     void deleteByRoomId(@Param("roomId") Long roomId);
+
+    // ImageController.java (line 107) isse use karta hai, isliye wapas add kiya
+    List<ImageMaster> findByRoom_RoomId(Long roomId);
 }
