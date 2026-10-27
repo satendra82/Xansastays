@@ -1,5 +1,6 @@
 package com.project.xansastays;
 
+import com.project.xansastays.ImageMaster.ImageRepository;
 import com.project.xansastays.ReviewMaster.ReviewRepository;
 import com.project.xansastays.RoomMaster.RoomMaster;
 import com.project.xansastays.RoomMaster.RoomRepository;
@@ -14,6 +15,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Controller
 public class HomeController {
@@ -21,13 +24,16 @@ public class HomeController {
     private final com.project.xansastays.GuestMaster.GuestRepository guestRepository;
     private final RoomRepository roomRepository;
     private final ReviewRepository reviewRepository;
+    private final ImageRepository imageRepository;
 
     public HomeController(com.project.xansastays.GuestMaster.GuestRepository guestRepository,
                           RoomRepository roomRepository,
-                          ReviewRepository reviewRepository) {
+                          ReviewRepository reviewRepository,
+                          ImageRepository imageRepository) {
         this.guestRepository = guestRepository;
         this.roomRepository = roomRepository;
         this.reviewRepository = reviewRepository;
+        this.imageRepository = imageRepository;
     }
 
     private void addUserInfo(String principal, Model model) {
@@ -42,15 +48,26 @@ public class HomeController {
         });
     }
 
+    // Rooms ke saath sirf image id/naam jodta hai (bytes nahi) -> room.imageList
+    private void attachImageInfo(List<RoomMaster> rooms) {
+        List<Long> ids = rooms.stream().map(RoomMaster::getRoomId).toList();
+        if (ids.isEmpty()) return;
+        Map<Long, List<ImageRepository.RoomImageInfo>> byRoom =
+                imageRepository.findInfoByRoomIds(ids).stream()
+                        .collect(Collectors.groupingBy(ImageRepository.RoomImageInfo::getRoomId));
+        rooms.forEach(r -> r.setImageList(byRoom.getOrDefault(r.getRoomId(), List.of())));
+    }
+
     @GetMapping({"/", "/Homepage"})
+    @Transactional(readOnly = true)
     public String home(Model model, Authentication authentication) {
         if (authentication != null && authentication.isAuthenticated()
                 && !"anonymousUser".equals(authentication.getName())) {
             addUserInfo(authentication.getName(), model);
         }
 
-        // ✅ FIXED - JOIN FETCH se images bhi saath load hongi
-        List<RoomMaster> rooms = roomRepository.findAllWithImages();
+        List<RoomMaster> rooms = roomRepository.findAll();
+        attachImageInfo(rooms);
         model.addAttribute("rooms", rooms);
 
         model.addAttribute("latestReviews",
@@ -76,7 +93,7 @@ public class HomeController {
         }
         model.addAttribute("activePage", "rooms");
         roomRepository.findById(id).ifPresent(room -> {
-            if (room.getImages() != null) room.getImages().size();
+            attachImageInfo(List.of(room));
             model.addAttribute("room", room);
 
             Long hotelId = (room.getHotel() != null) ? room.getHotel().getHotelId() : 1L;

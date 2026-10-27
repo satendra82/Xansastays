@@ -1,4 +1,7 @@
 target/
 project-temp/
 .idea/
+*.imltarget/
+.idea/
 *.iml
+*.log

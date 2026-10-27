@@ -156,10 +156,10 @@
              th:attr="data-guests=${room.maxGuests},data-roomtype=${room.roomType},data-status=${room.status}">
 
             <div class="room-img r1">
-                <img th:if="${room.images != null and !room.images.empty}"
-                     th:src="@{/api/rooms/image/{id}(id=${room.images[0].imageId})}"
+                <img th:if="${room.imageList != null and !room.imageList.empty}"
+                     th:src="@{/api/rooms/image/{id}(id=${room.imageList[0].imageId})}"
                      th:alt="${room.name}">
-                <img th:unless="${room.images != null and !room.images.empty}"
+                <img th:unless="${room.imageList != null and !room.imageList.empty}"
                      src="/images/room-deluxe.jpg" alt="Room">
                 <span class="room-tag"
                       th:text="${room.status != null and room.status.name() == 'AVAILABLE'} ? 'Available' : 'Booked'">
